@@ -16,16 +16,19 @@
 package com.tentixo.configuration;
 
 import se.curity.identityserver.sdk.config.Configuration;
+import se.curity.identityserver.sdk.config.annotation.DefaultBoolean;
 import se.curity.identityserver.sdk.config.annotation.DefaultString;
 import se.curity.identityserver.sdk.config.annotation.Description;
 import se.curity.identityserver.sdk.config.annotation.Suggestions;
-import se.curity.identityserver.sdk.config.annotation.DefaultBoolean;
 
 /**
  * Provides configuration for accessing Couchbase data.
  */
 public interface CouchbaseDataAccessProviderConfiguration extends Configuration {
 
+    // It's possible to add validations on configured values
+    // See https://curity.io/docs/idsvr-java-plugin-sdk/latest/se/curity/identityserver/sdk/config/annotation/package-summary.html
+    // For available annotations
     @Description("Couchbase instance's host")
     @Suggestions("123.25.0.17")
     String getHost();

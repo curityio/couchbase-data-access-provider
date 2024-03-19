@@ -29,6 +29,7 @@ import static java.util.Optional.ofNullable;
 /**
  * The CouchbaseCredentialDataAccessProvider class is responsible for accessing and updating user credentials in Couchbase.
  */
+// TODO: This uses the old style of credential storage. New implementations should use #{{@link se.curity.identityserver.sdk.datasource.CredentialStoringDataAccessProvider} and #{{@link se.curity.identityserver.sdk.datasource.CredentialVerifyingDataAccessProvider}}}
 @Slf4j
 public class CouchbaseCredentialDataAccessProvider implements CredentialDataAccessProvider {
 

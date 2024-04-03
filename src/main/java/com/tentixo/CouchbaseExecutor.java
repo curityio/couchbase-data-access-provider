@@ -19,7 +19,8 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JsonObject;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
 import se.curity.identityserver.sdk.attribute.AccountAttributes;
 import se.curity.identityserver.sdk.data.query.ResourceQuery.AttributesEnumeration;
@@ -33,9 +34,9 @@ import java.util.Set;
 
 import static java.util.Optional.ofNullable;
 
-@Slf4j
 public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProviderConfiguration> {
 
+    private static final Logger _logger = LoggerFactory.getLogger(CouchbaseExecutor.class);
     private CouchbaseDataAccessProviderConfiguration configuration;
 
     private Cluster cluster;
@@ -73,7 +74,7 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
                     .collection(configuration.getCollection());
             this.configuration = configuration;
         } catch (CouchbaseException e) {
-            log.error("Init error! {}", e.getMessage());
+            _logger.error("Init error! {}", e.getMessage());
         }
     }
 

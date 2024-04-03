@@ -14,14 +14,10 @@
 
 package com.tentixo;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
-import se.curity.identityserver.sdk.attribute.AccountAttributes;
-import se.curity.identityserver.sdk.attribute.Attribute;
-import se.curity.identityserver.sdk.attribute.Attributes;
-import se.curity.identityserver.sdk.attribute.AuthenticationAttributes;
-import se.curity.identityserver.sdk.attribute.ContextAttributes;
-import se.curity.identityserver.sdk.attribute.SubjectAttributes;
+import se.curity.identityserver.sdk.attribute.*;
 import se.curity.identityserver.sdk.datasource.CredentialDataAccessProvider;
 
 import static java.util.Optional.ofNullable;
@@ -30,9 +26,9 @@ import static java.util.Optional.ofNullable;
  * The CouchbaseCredentialDataAccessProvider class is responsible for accessing and updating user credentials in Couchbase.
  */
 // TODO: This uses the old style of credential storage. New implementations should use #{{@link se.curity.identityserver.sdk.datasource.CredentialStoringDataAccessProvider} and #{{@link se.curity.identityserver.sdk.datasource.CredentialVerifyingDataAccessProvider}}}
-@Slf4j
 public class CouchbaseCredentialDataAccessProvider implements CredentialDataAccessProvider {
 
+    private static final Logger _logger = LoggerFactory.getLogger(CouchbaseCredentialDataAccessProvider.class);
     private final CouchbaseExecutor _couchbaseExecutor;
 
     public CouchbaseCredentialDataAccessProvider(CouchbaseExecutor couchbaseExecutor) {
@@ -47,14 +43,14 @@ public class CouchbaseCredentialDataAccessProvider implements CredentialDataAcce
     @Override
     public void updatePassword(AccountAttributes accountAttributes) {
         var username = accountAttributes.getUserName();
-        log.debug("Received update password request for username : {}", username);
+        _logger.debug("Received update password request for username : {}", username);
         var newPassword = ofNullable(accountAttributes.getPassword());
         if (newPassword.isEmpty()) {
-            log.warn("Cannot update account password, missing password value");
+            _logger.warn("Cannot update account password, missing password value");
             return;
         }
         _couchbaseExecutor.updatePassword(username, newPassword.get());
-        log.debug("Updated password for username : {}", username);
+        _logger.debug("Updated password for username : {}", username);
     }
 
     /**
@@ -67,7 +63,7 @@ public class CouchbaseCredentialDataAccessProvider implements CredentialDataAcce
      */
     @Override
     public @Nullable AuthenticationAttributes verifyPassword(String userName, String password) {
-        log.debug("Received request to verify password for username : {}", userName);
+        _logger.debug("Received request to verify password for username : {}", userName);
         Attributes accountAttributes = _couchbaseExecutor.getByParameter(Parameters.USERNAME, userName, null);
         if (accountAttributes == null) {
             accountAttributes = Attributes.of(Attribute.of(AccountAttributes.PASSWORD, ""));

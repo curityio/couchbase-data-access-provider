@@ -21,7 +21,7 @@ dependencies {
 group = 'io.curity.identityserver.plugins.datasources'
 version = '1.0.0-SNAPSHOT'
 description = 'Couchbase Data Source plugin'
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'

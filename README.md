@@ -1,28 +1,35 @@
-This library is designed to be a Curity Couchbase datasource plugin
+# Couchbase Data Source plugin
+This is an implementation of a Curity Couchbase datasource plugin
 
-Library "execution" starts with the entrypoint
-described [here](/src/main/resources/META-INF/services/se.curity.identityserver.sdk.plugin.descriptor.DataAccessProviderPluginDescriptor).  
-You should keep this file location and structure, same for the other files (if possible).
+This plugin currently implements the following interfaces:
 
-Library can't "start" in a common sense, you can only build it and apply to your Curity instance as described below.
+* `AttributeDataAccessProvider`
+* `CredentialDataAccessProvider`
+* `UserAccountDataAccessProvider`
 
-## Plugin deployment flow ##
+This means that it will be usable for authentication and attribute collection use cases with the Curity Identity Server.
 
-You must build the library to get something in the target folder. This will be a plugin source.
+## Build from source
+To build the project, use `./gradlew build`.
+To create a folder containing both the plugin and the necessary dependencies, run `./gradlew createPluginDir`. 
+`createPluginDir` creates `build/curity-couchbase-plugin`. This folder can then be copied into the Curity on the path: `usr/share/plugins`.
 
-- either execute `mvn clean package` being in the [root](.) directory, or by using Intellij Idea Maven toolbar, and
-  ensure that all tests are passed
-- get your Curity Docker container started, remember its name and obtain its id by
-  executing `docker ps -aqf "name=containername"` (Windows)
-- if you are not using Windows, look for the ways to get your container id for different OS
-- execute `docker cp .\target\lib [container_id]:/opt/idsvr/usr/share/plugins/couchbase/`  
-  being in the [root](.) directory. This will copy the library sources to the Curity container instance.
-- use your Curity container's name to restart it with `docker restart [container_name]`
+## Plugin deployment options ##
+To use the plugin in Curity, there are some options.
 
-After that, go to the Curity [admin page](https://localhost:6749/), select Data sources on the right panel, and if you
-see Coucbase here, that means everything is done successfully!
+- Copy the plugin directory to an existing docker container.
+  `docker cp ./build/curity-couchbase-plugin [container_id]:/opt/idsvr/usr/share/plugins/`. Note that the container will have to be restarted for the plugin to be picked up.
+- Copy the plugin directory to a local Curity installation, where `IDSVR_HOME` is the home folder for you installation.
+  `cp -r ./build/curity-couchbase-plugin $IDSVR_HOME/usr/share/plugins/`, and restart your installation
+- Build a docker image with the plugin folder copied into the image. There's a Dockerfile in the repo to help with that.
+
 
 ## Build docker image
 
-- either execute `mvn clean package` being in the [root](.) directory, or by using Intellij Idea Maven toolbar
-- run `docker build -f Dockerfile.idsvr . -t curity-couchbase_datasource` command
+- Run `./gradlew createPluginDir` to build the plugin.
+- Run `docker build . -t curity-couchbase-datasource` to build the image
+- Start the container using `docker run -ti --rm -p6749:6749 -e PASSWORD=mysecret curity-couchbase-datasource`
+
+After that, go to the Curity [admin page](https://localhost:6749/admin), login using username `admin` and password `mysecret`(set in the run command above). Check that the plugin was loaded by clicking `Facilities -> Data Sources -> +New` in the top right corner. If you have the possibility to select Couchbase as a type, the plugin has been loaded.
+
+Visit [Getting Started](https://curity.io/resources/getting-started/) to help with setting up your new Curity instance.

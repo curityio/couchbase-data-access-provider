@@ -14,7 +14,8 @@
 
 package com.tentixo;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
 import se.curity.identityserver.sdk.attribute.AccountAttributes;
 import se.curity.identityserver.sdk.attribute.scim.v2.ResourceAttributes;
@@ -30,9 +31,9 @@ import java.util.Map;
 /**
  * The CouchbaseUserAccountDataAccessProvider class provides access to user account data stored in Couchbase.
  */
-@Slf4j
 public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAccessProvider {
 
+    private static final Logger _logger = LoggerFactory.getLogger(CouchbaseUserAccountDataAccessProvider.class);
     private final CouchbaseExecutor _couchbaseExecutor;
 
     public CouchbaseUserAccountDataAccessProvider(CouchbaseExecutor couchbaseExecutor) {
@@ -49,7 +50,7 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
     @Override
     public @Nullable ResourceAttributes<?> getByUserName(String username,
                                                          ResourceQuery.AttributesEnumeration attributesEnumeration) {
-        log.debug("Received request to get account by username: {}", username);
+        _logger.debug("Received request to get account by username: {}", username);
         return _couchbaseExecutor.getByParameter(Parameters.USERNAME, username, attributesEnumeration);
     }
 
@@ -63,7 +64,7 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
     @Override
     public @Nullable ResourceAttributes<?> getByEmail(String email,
                                                       ResourceQuery.AttributesEnumeration attributesEnumeration) {
-        log.debug("Received request to get account by email: {}", email);
+        _logger.debug("Received request to get account by email: {}", email);
         // TODO: Rewrite to work with SCIM parameters, since they are multivalued
         // A scim email looks like this:
         // emails: [{value: john@doe.com, primary: true}, {value: johndoe@gmail.com}]
@@ -81,7 +82,7 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
     @Override
     public @Nullable ResourceAttributes<?> getByPhone(String phone,
                                                       ResourceQuery.AttributesEnumeration attributesEnumeration) {
-        log.debug("Received request to get account by phone: {}", phone);
+        _logger.debug("Received request to get account by phone: {}", phone);
         // TODO: Rewrite to work with SCIM parameters, since they are multivalued
         return _couchbaseExecutor.getByParameter(Parameters.PHONE, phone, attributesEnumeration);
     }
@@ -94,7 +95,7 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
      */
     @Override
     public AccountAttributes create(AccountAttributes accountAttributes) {
-        log.debug("Received request to create a new account");
+        _logger.debug("Received request to create a new account");
         return _couchbaseExecutor.create(accountAttributes);
     }
 
@@ -108,7 +109,7 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
     @Override
     public ResourceAttributes<?> update(AccountAttributes accountAttributes,
                                         ResourceQuery.AttributesEnumeration attributesEnumeration) {
-        log.debug("Received update request for username: {}", accountAttributes.getUserName());
+        _logger.debug("Received update request for username: {}", accountAttributes.getUserName());
         return _couchbaseExecutor.updateByUsername(accountAttributes.getUserName(), accountAttributes.toMap(),
                 attributesEnumeration);
     }
@@ -124,7 +125,7 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
     @Override
     public @Nullable ResourceAttributes<?> update(String accountId, Map<String, Object> map,
                                                   ResourceQuery.AttributesEnumeration attributesEnumeration) {
-        log.debug("Received update request for accountId: {}", accountId);
+        _logger.debug("Received update request for accountId: {}", accountId);
         return _couchbaseExecutor.updateByAccountId(accountId, map, attributesEnumeration);
     }
 
@@ -140,7 +141,7 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
     public @Nullable ResourceAttributes<?> patch(String accountId, AttributeUpdate attributeUpdate,
                                                  ResourceQuery.AttributesEnumeration attributesEnumeration) {
 
-        log.debug("Received patch request with accountId: {}", accountId);
+        _logger.debug("Received patch request with accountId: {}", accountId);
         var dataMap = attributeUpdate.getAttributeReplacements().toMap();
         dataMap.putAll(attributeUpdate.getAttributeAdditions().toMap());
         return _couchbaseExecutor.patchByAccountId(accountId, dataMap, attributesEnumeration);
@@ -208,7 +209,7 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
      */
     @Override
     public void delete(String accountId) {
-        log.debug("Received request to delete account with account id: {}", accountId);
+        _logger.debug("Received request to delete account with account id: {}", accountId);
         _couchbaseExecutor.delete(accountId);
     }
 
@@ -221,7 +222,7 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
      */
     @Override
     public ResourceQueryResult getAll(long startIndex, long count) {
-        log.debug("Received request to find all pageable with start index: {}, count: {}", startIndex, count);
+        _logger.debug("Received request to find all pageable with start index: {}, count: {}", startIndex, count);
         return _couchbaseExecutor.findAllPageable(startIndex, count);
     }
 }

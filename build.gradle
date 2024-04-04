@@ -8,8 +8,6 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'org.projectlombok', name: 'lombok', version:'1.18.24'
-    annotationProcessor 'org.projectlombok:lombok:1.18.32'
     implementation group: 'com.couchbase.client', name: 'java-client', version:'3.4.2'
     compileOnly group: 'se.curity.identityserver', name: 'identityserver.sdk', version:'9.1.0'
     compileOnly group: 'org.slf4j', name: 'slf4j-api', version:'2.0.3'

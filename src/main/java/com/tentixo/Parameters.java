@@ -14,12 +14,9 @@
 
 package com.tentixo;
 
-import lombok.Getter;
-
 /**
  * Enum representing parameters used in a database query.
  */
-@Getter
 public enum Parameters
 {
     USERNAME("userName", "username"), EMAIL("emails", "email"), PHONE("phoneNumbers", "phone");
@@ -33,4 +30,11 @@ public enum Parameters
         this.name = name;
     }
 
+    public String getScimName() {
+        return scimName;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

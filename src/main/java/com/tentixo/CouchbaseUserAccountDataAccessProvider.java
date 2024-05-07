@@ -34,6 +34,7 @@ import java.util.Map;
 public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAccessProvider {
 
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseUserAccountDataAccessProvider.class);
+    public static final String ACCOUNT_COLLECTION_NAME = "curity-accounts";
     private final CouchbaseExecutor _couchbaseExecutor;
 
     public CouchbaseUserAccountDataAccessProvider(CouchbaseExecutor couchbaseExecutor) {

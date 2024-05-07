@@ -14,11 +14,13 @@
 
 package com.tentixo.descriptor;
 
-import com.tentixo.CouchbaseAttributeDataAccessProvider;
-import com.tentixo.CouchbaseCredentialDataAccessProvider;
-import com.tentixo.CouchbaseExecutor;
-import com.tentixo.CouchbaseUserAccountDataAccessProvider;
+import com.tentixo.*;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
+import com.tentixo.token.CouchbaseDelegationDataAccessProvider;
+import com.tentixo.token.CouchbaseNonceDataAccessProvider;
+import com.tentixo.token.CouchbaseTokenDataAccessProvider;
+import se.curity.identityserver.sdk.Nullable;
+import se.curity.identityserver.sdk.datasource.*;
 import se.curity.identityserver.sdk.plugin.ManagedObject;
 import se.curity.identityserver.sdk.plugin.descriptor.DataAccessProviderPluginDescriptor;
 
@@ -74,6 +76,33 @@ public class CouchbaseDataAccessProviderDescriptor
     public Class<CouchbaseUserAccountDataAccessProvider> getUserAccountDataAccessProvider() {
         return CouchbaseUserAccountDataAccessProvider.class;
     }
+
+    @Override
+    public @Nullable Class<? extends NonceDataAccessProvider> getNonceDataAccessProvider() {
+        return CouchbaseNonceDataAccessProvider.class;
+    }
+
+    @Override
+    public @Nullable Class<? extends SessionDataAccessProvider> getSessionDataAccessProvider() {
+        return CouchbaseSessionDataAccessProvider.class;
+    }
+
+    @Override
+    public @Nullable Class<? extends DelegationDataAccessProvider> getDelegationDataAccessProvider() {
+        return CouchbaseDelegationDataAccessProvider.class;
+    }
+
+    @Override
+    public @Nullable Class<? extends TokenDataAccessProvider> getTokenDataAccessProvider() {
+        return CouchbaseTokenDataAccessProvider.class;
+    }
+
+    @Override
+    public @Nullable Class<? extends BucketDataAccessProvider> getBucketDataAccessProvider() {
+        return CouchbaseBucketDataAccessProvider.class;
+    }
+
+
 
     /**
      * Creates a new managed object for the Couchbase executor based on the provided configuration.

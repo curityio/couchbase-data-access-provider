@@ -16,10 +16,7 @@
 package com.tentixo.configuration;
 
 import se.curity.identityserver.sdk.config.Configuration;
-import se.curity.identityserver.sdk.config.annotation.DefaultBoolean;
-import se.curity.identityserver.sdk.config.annotation.DefaultString;
-import se.curity.identityserver.sdk.config.annotation.Description;
-import se.curity.identityserver.sdk.config.annotation.Suggestions;
+import se.curity.identityserver.sdk.config.annotation.*;
 
 /**
  * Provides configuration for accessing Couchbase data.
@@ -52,10 +49,6 @@ public interface CouchbaseDataAccessProviderConfiguration extends Configuration 
     @DefaultString("_default")
     String getScope();
 
-    @Description("Couchbase bucket's collection")
-    @DefaultString("curity")
-    String getCollection();
-
     @Description("Query (with collection, bucket, scope and subject parameter) to get token claims")
     @Suggestions("SELECT * FROM `[bucket]`.`[collection]`.`[scope]` WHERE META().id = :subject")
     String getClaimQuery();
@@ -64,4 +57,31 @@ public interface CouchbaseDataAccessProviderConfiguration extends Configuration 
     @DefaultBoolean(true)
     // TODO: This makes it not so flexible, probably some parameter name mapping is needed
     boolean getUseScimParameterNames();
+    // Additional retain duration
+
+    @Description("Sessions additional retain duration (in seconds)")
+    @DefaultLong(24 * 60 * 60)
+    @RangeConstraint(min = 0.0, max = Long.MAX_VALUE)
+    Long getSessionsTtlRetainDuration();
+
+    @Description("Nonces additional retain duration (in seconds)")
+    @DefaultLong(24 * 60 * 60)
+    @RangeConstraint(min = 0.0, max = Long.MAX_VALUE)
+    Long getNoncesTtlRetainDuration();
+
+    @Description("Delegations additional retain duration (in seconds)")
+    @DefaultLong(365 * 24 * 60 * 60)
+    @RangeConstraint(min = 0.0, max = Long.MAX_VALUE)
+    Long getDelegationsTtlRetainDuration();
+
+    @Description("Tokens additional retain duration (in seconds)")
+    @DefaultLong(2 * 24 * 60 * 60)
+    @RangeConstraint(min = 0.0, max = Long.MAX_VALUE)
+    Long getTokensTtlRetainDuration();
+
+    @Description("Devices additional retain duration (in seconds)")
+    @DefaultLong(30 * 24 * 60 * 60)
+    @RangeConstraint(min = 0.0, max = Long.MAX_VALUE)
+    Long getDevicesTtlRetainDuration();
+
 }

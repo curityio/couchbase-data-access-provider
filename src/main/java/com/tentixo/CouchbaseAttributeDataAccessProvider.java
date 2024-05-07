@@ -19,6 +19,7 @@ import se.curity.identityserver.sdk.attribute.AttributeTableView;
 import se.curity.identityserver.sdk.attribute.Attributes;
 import se.curity.identityserver.sdk.datasource.AttributeDataAccessProvider;
 
+import static com.tentixo.CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME;
 import static java.util.Collections.singletonList;
 
 /**
@@ -50,7 +51,7 @@ public class CouchbaseAttributeDataAccessProvider implements AttributeDataAccess
         var query = _configuration.getClaimQuery()
                 .replace(BUCKET_MARK, _configuration.getBucket())
                 .replace(SCOPE_MARK, _configuration.getScope())
-                .replace(COLLECTION_MARK, _configuration.getCollection())
+                .replace(COLLECTION_MARK, ACCOUNT_COLLECTION_NAME)
                 .replace(SUBJECT_MARK, subject);
         return AttributeTableView.ofAttributes(
                 singletonList(Attributes.fromMap(

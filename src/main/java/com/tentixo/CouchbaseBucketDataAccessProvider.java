@@ -14,10 +14,16 @@
 
 package com.tentixo;
 
+import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.kv.MutationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import se.curity.identityserver.sdk.datasource.BucketDataAccessProvider;
 
+import java.time.Instant;
 import java.util.Map;
 
 public final class CouchbaseBucketDataAccessProvider implements BucketDataAccessProvider {
@@ -25,29 +31,68 @@ public final class CouchbaseBucketDataAccessProvider implements BucketDataAccess
 
     private final CouchbaseBucketDataAccessProvider _configuration;
 
-    @SuppressWarnings("unused") // used through DI
-    public CouchbaseBucketDataAccessProvider(CouchbaseBucketDataAccessProvider configuration) {
+    private static final Marker MASK_MARKER= MarkerFactory.getMarker("MASK");
+    private static final String BUCKET_COLLECTION_NAME = "curity-buckets";
+    private final CouchbaseExecutor _couchbaseExecutor;
+    private final Collection collection;
+
+    public CouchbaseBucketDataAccessProvider(CouchbaseBucketDataAccessProvider configuration, CouchbaseExecutor couchbaseExecutor) {
         _configuration = configuration;
+        this._couchbaseExecutor = couchbaseExecutor;
+        this.collection = couchbaseExecutor.getScope().collection(BUCKET_COLLECTION_NAME);
     }
 
     @Override
     public Map<String, Object> getAttributes(String subject, String purpose) {
-        _logger.debug("Getting bucket attributes with subject: {} , purpose : {}", subject, purpose);
-        throw new UnsupportedOperationException();
+        _logger.debug(MASK_MARKER, "getAttributes with subject: {} , purpose : {}", subject, purpose);
+        String key = getBucketKey(subject, purpose);
+        return collection.get(key).contentAsObject().toMap();
     }
 
     @Override
     public Map<String, Object> storeAttributes(String subject, String purpose, Map<String, Object> dataMap) {
-        dataMap.put("subject", subject);
-        dataMap.put("purpose", purpose);
+        Bucket b = new Bucket();
+        b.subject = subject;
+        b.purpose = purpose;
+        b.attributes = dataMap;
 
-        _logger.debug("Storing bucket attributes with subject: {} , purpose : {} and data : {}", subject, purpose, dataMap);
+        _logger.debug(MASK_MARKER,
+                "storeAttributes with subject: {} , purpose : {} and data : {}",
+                subject,
+                purpose,
+                dataMap
+        );
 
-        throw new UnsupportedOperationException();
+        var now = Instant.now().getEpochSecond();
+        b.updated = now;
+        b.created = now;
+
+        String key = getBucketKey(subject, purpose);
+
+        collection.insert(key, dataMap);
+
+        return dataMap;
+    }
+
+    private static String getBucketKey(String subject, String purpose) {
+        return String.format("subject::%s::purpose::%s", subject, purpose);
     }
 
     @Override
     public boolean clearBucket(String subject, String purpose) {
-        throw new UnsupportedOperationException();
+        String key = getBucketKey(subject, purpose);
+        try {
+            collection.remove(key);
+            return true;
+        } catch (CouchbaseException ce) {
+            return false;
+        }
     }
+
+}
+
+class Bucket {
+    String subject, purpose;
+    Long updated, created;
+    Map<String, Object> attributes;
 }

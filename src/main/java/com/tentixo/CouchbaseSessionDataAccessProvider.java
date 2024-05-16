@@ -14,35 +14,51 @@
 
 package com.tentixo;
 
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.kv.Expiry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
 import se.curity.identityserver.sdk.data.Session;
 import se.curity.identityserver.sdk.datasource.SessionDataAccessProvider;
 
+import java.time.Duration;
 import java.time.Instant;
 
 public final class CouchbaseSessionDataAccessProvider implements SessionDataAccessProvider {
+    private static final Logger _logger = LoggerFactory.getLogger(CouchbaseSessionDataAccessProvider.class);
+    private static final String SESSION_COLLECTION_NAME = "curity-sessions";
+    private final CouchbaseExecutor _couchbaseExecutor;
+    private final Collection collection;
+
+    public CouchbaseSessionDataAccessProvider(CouchbaseExecutor couchbaseExecutor) {
+        _couchbaseExecutor = couchbaseExecutor;
+        this.collection = couchbaseExecutor.getScope().collection(SESSION_COLLECTION_NAME);
+    }
     @Override
     public @Nullable Session getSessionById(String id) {
-        throw new UnsupportedOperationException();
+        return collection.get(id).contentAs(Session.class);
     }
 
     @Override
     public void insertSession(Session session) {
-        throw new UnsupportedOperationException();
+        collection.insert(session.getId(), session);
     }
 
     @Override
     public void updateSession(Session session) {
-        throw new UnsupportedOperationException();
+        collection.replace(session.getId(), session);
     }
 
     @Override
     public void updateSessionExpiration(String id, Instant expiresAt) {
-        throw new UnsupportedOperationException();
+        Instant now = Instant.now();
+        Duration duration = Duration.between(now, expiresAt);
+        collection.touch(id, duration);
     }
 
     @Override
     public void deleteSessionState(String id) {
-        throw new UnsupportedOperationException();
+        collection.remove(id);
     }
 }

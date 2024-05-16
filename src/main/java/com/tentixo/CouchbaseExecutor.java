@@ -15,10 +15,14 @@
 package com.tentixo;
 
 import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
+import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.manager.collection.CollectionSpec;
+import com.couchbase.client.java.query.QueryOptions;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +37,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.tentixo.CouchbaseBucketDataAccessProvider.BUCKET_COLLECTION_NAME;
+import static com.tentixo.CouchbaseSessionDataAccessProvider.SESSION_COLLECTION_NAME;
 import static com.tentixo.CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME;
+import static com.tentixo.token.CouchbaseDelegationDataAccessProvider.DELEGATION_COLLECTION_NAME;
+import static com.tentixo.token.CouchbaseNonceDataAccessProvider.NONCE_COLLECTION_NAME;
+import static com.tentixo.token.CouchbaseTokenDataAccessProvider.TOKEN_COLLECTION_NAME;
 import static java.util.Optional.ofNullable;
 
 public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProviderConfiguration> {
@@ -42,6 +51,8 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
     private CouchbaseDataAccessProviderConfiguration configuration;
 
     private Cluster cluster;
+
+    private Bucket bucket;
 
     private Scope scope;
 
@@ -73,13 +84,36 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
             var username = configuration.getUserName();
             var password = configuration.getPassword();
             this.cluster = Cluster.connect(connectionString, username, password);
-            this.scope = cluster.bucket(configuration.getBucket())
-                    .scope(configuration.getScope());
+            this.bucket = cluster.bucket(configuration.getBucket());
+            if (bucket == null) {
+                throw new RuntimeException("Given bucket does not exist: " + configuration.getBucket());
+            }
+            this.scope = bucket.scope(configuration.getScope());
+            if (this.scope == null) {
+                bucket.collections().createScope(configuration.getScope());
+                this.scope = bucket.scope(configuration.getScope());
+            }
             this.collection = scope.collection(ACCOUNT_COLLECTION_NAME);
             this.configuration = configuration;
+            setupCollections();
         } catch (CouchbaseException e) {
             _logger.error("Init error! {}", e.getMessage());
         }
+    }
+
+    public void setupCollections(){
+        createCollectionIfNotExist(ACCOUNT_COLLECTION_NAME);
+        createCollectionIfNotExist(DELEGATION_COLLECTION_NAME);
+        createCollectionIfNotExist(NONCE_COLLECTION_NAME);
+        createCollectionIfNotExist(TOKEN_COLLECTION_NAME);
+        createCollectionIfNotExist(BUCKET_COLLECTION_NAME);
+        createCollectionIfNotExist(SESSION_COLLECTION_NAME);
+    };
+
+    public void createCollectionIfNotExist(String collectionName){
+        Collection c = scope.collection(collectionName);
+        if (c == null) bucket.collections().createCollection(CollectionSpec.create(collectionName, scope.name()));
+        scope.query("CREATE PRIMARY INDEX ON $1", QueryOptions.queryOptions().parameters(JsonArray.from(collectionName)));
     }
 
     /**

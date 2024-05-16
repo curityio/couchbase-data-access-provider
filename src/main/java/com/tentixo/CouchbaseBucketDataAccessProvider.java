@@ -32,7 +32,7 @@ public final class CouchbaseBucketDataAccessProvider implements BucketDataAccess
     private final CouchbaseBucketDataAccessProvider _configuration;
 
     private static final Marker MASK_MARKER= MarkerFactory.getMarker("MASK");
-    private static final String BUCKET_COLLECTION_NAME = "curity-buckets";
+    public static final String BUCKET_COLLECTION_NAME = "curity-buckets";
     private final CouchbaseExecutor _couchbaseExecutor;
     private final Collection collection;
 

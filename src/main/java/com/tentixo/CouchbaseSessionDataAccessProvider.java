@@ -27,7 +27,7 @@ import java.time.Instant;
 
 public final class CouchbaseSessionDataAccessProvider implements SessionDataAccessProvider {
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseSessionDataAccessProvider.class);
-    private static final String SESSION_COLLECTION_NAME = "curity-sessions";
+    public static final String SESSION_COLLECTION_NAME = "curity-sessions";
     private final CouchbaseExecutor _couchbaseExecutor;
     private final Collection collection;
 

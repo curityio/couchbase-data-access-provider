@@ -37,7 +37,7 @@ import java.util.stream.Stream;
  */
 public final class CouchbaseDelegationDataAccessProvider implements DelegationDataAccessProvider {
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseDelegationDataAccessProvider.class);
-    private static final String DELEGATION_COLLECTION_NAME = "curity-delegations";
+    public static final String DELEGATION_COLLECTION_NAME = "curity-delegations";
     private final CouchbaseExecutor _couchbaseExecutor;
     private final Scope scope;
     private final com.couchbase.client.java.Collection collection;

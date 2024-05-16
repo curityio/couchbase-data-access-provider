@@ -32,7 +32,7 @@ import java.util.List;
 public final class CouchbaseTokenDataAccessProvider implements TokenDataAccessProvider {
 
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseTokenDataAccessProvider.class);
-    private static final String TOKEN_COLLECTION_NAME = "curity-tokens";
+    public static final String TOKEN_COLLECTION_NAME = "curity-tokens";
     private final CouchbaseExecutor _couchbaseExecutor;
     private final Collection collection;
 
@@ -43,30 +43,26 @@ public final class CouchbaseTokenDataAccessProvider implements TokenDataAccessPr
 
     @Override
     public @Nullable Token getByHash(String tokenHash) {
-        String tokenId = collection.get(tokenHash).contentAs(String.class);
-        return collection.get(tokenId).contentAs(Token.class);
+        return collection.get(tokenHash).contentAs(Token.class);
     }
 
     @Override
     public void create(Token token) {
         long expiration = token.getExpires();
         Instant expInstant = Instant.ofEpochSecond(expiration);
-        collection.insert(token.getId(), token, InsertOptions.insertOptions().expiry(expInstant));
-        collection.insert(token.getTokenHash(), token.getId(), InsertOptions.insertOptions().expiry(expInstant));
+        collection.insert(token.getTokenHash(), token, InsertOptions.insertOptions().expiry(expInstant));
     }
 
     @Override
     public @Nullable String getStatus(String tokenHash) {
-        String tokenId = collection.get(tokenHash).contentAs(String.class);
-        Token token = collection.get(tokenId).contentAs(Token.class);
+        Token token = collection.get(tokenHash).contentAs(Token.class);
         return token.getStatus().toString();
     }
 
     @Override
     public long setStatusByTokenHash(String tokenHash, TokenStatus newStatus) {
         try {
-            String tokenId = collection.get(tokenHash).contentAs(String.class);
-            collection.mutateIn(tokenId, List.of(MutateInSpec.replace("token", newStatus.name())));
+            collection.mutateIn(tokenHash, List.of(MutateInSpec.replace("token", newStatus.name())));
             return 1;
         } catch (CouchbaseException ce) {
             _logger.error(ce.getMessage());

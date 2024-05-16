@@ -32,7 +32,7 @@ import java.util.List;
  */
 public final class CouchbaseNonceDataAccessProvider implements NonceDataAccessProvider {
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseNonceDataAccessProvider.class);
-    private static final String NONCE_COLLECTION_NAME = "curity-nonces";
+    public static final String NONCE_COLLECTION_NAME = "curity-nonces";
     private final CouchbaseExecutor _couchbaseExecutor;
     private final Collection collection;
     private final CouchbaseDataAccessProviderConfiguration _configuration;

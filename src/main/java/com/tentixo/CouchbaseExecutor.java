@@ -24,6 +24,7 @@ import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.manager.collection.CollectionSpec;
 import com.couchbase.client.java.query.QueryOptions;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
+import com.tentixo.configuration.DBSetupRunners;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
@@ -93,30 +94,15 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
                 bucket.collections().createScope(configuration.getScope());
                 this.scope = bucket.scope(configuration.getScope());
             }
-            this.collection = scope.collection(ACCOUNT_COLLECTION_NAME);
+            DBSetupRunners setupRunners =  new DBSetupRunners();
+            setupRunners.run(cluster, bucket, scope);
             this.configuration = configuration;
-            setupCollections();
         } catch (CouchbaseException e) {
             _logger.error("Init error! {}", e.getMessage());
         }
     }
 
-    public void setupCollections(){
-        createCollectionIfNotExist(ACCOUNT_COLLECTION_NAME);
-        createCollectionIfNotExist(DELEGATION_COLLECTION_NAME);
-        createCollectionIfNotExist(NONCE_COLLECTION_NAME);
-        createCollectionIfNotExist(TOKEN_COLLECTION_NAME);
-        createCollectionIfNotExist(BUCKET_COLLECTION_NAME);
-        createCollectionIfNotExist(SESSION_COLLECTION_NAME);
-    };
-
-    public void createCollectionIfNotExist(String collectionName){
-        Collection c = scope.collection(collectionName);
-        if (c == null) bucket.collections().createCollection(CollectionSpec.create(collectionName, scope.name()));
-        scope.query("CREATE PRIMARY INDEX ON $1", QueryOptions.queryOptions().parameters(JsonArray.from(collectionName)));
-    }
-
-    /**
+        /**
      * Closes the connection to the cluster.
      */
     @Override

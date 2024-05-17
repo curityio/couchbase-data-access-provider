@@ -45,12 +45,12 @@ public final class CouchbaseNonceDataAccessProvider implements NonceDataAccessPr
     @Override
     public @Nullable String get(String nonce) {
         Nonce nonceObject = collection.get(nonce).contentAs(Nonce.class);
-        if (!NonceStatus.issued.name().equals(nonceObject.nonceStatus)) {
+        if (!NonceStatus.issued.name().equals(nonceObject.getNonceStatus())) {
             return null;
         }
 
-        var createdAt = nonceObject.createdAt;
-        var ttl = nonceObject.nonceTtl;
+        var createdAt = nonceObject.getCreatedAt();
+        var ttl = nonceObject.getNonceTtl();
         var now = Instant.now().getEpochSecond();
 
         _logger.trace("Nonce createdAt: {}, ttl: {}, now: {}", createdAt, ttl, now);
@@ -60,20 +60,19 @@ public final class CouchbaseNonceDataAccessProvider implements NonceDataAccessPr
             expireNonce(nonce);
             return null;
         }
-        return nonceObject.nonceValue;
+        return nonceObject.getNonceValue();
     }
 
     @Override
     public void save(String nonce, String value, long createdAt, long ttl) {
         Nonce nonceObject = new Nonce();
-        nonceObject.nonce = nonce;
-        nonceObject.nonceValue = value;
-        nonceObject.createdAt = createdAt;
-        nonceObject.nonceTtl = ttl;
-        nonceObject.nonceStatus = NonceStatus.issued.name();
-        nonceObject.deleteableAt = createdAt + ttl + _configuration.getNoncesTtlRetainDuration();
-        collection.insert(nonce, nonceObject, InsertOptions.insertOptions().expiry(Instant.ofEpochSecond(ttl)));
-        throw new UnsupportedOperationException();
+        nonceObject.setNonce(nonce);
+        nonceObject.setNonceValue(value);
+        nonceObject.setCreatedAt(createdAt);
+        nonceObject.setNonceTtl(ttl);
+        nonceObject.setNonceStatus(NonceStatus.issued.name());
+        nonceObject.setDeleteableAt(createdAt + ttl + _configuration.getNoncesTtlRetainDuration());
+        collection.insert(nonce, nonceObject, InsertOptions.insertOptions().expiry(Instant.ofEpochSecond(nonceObject.getDeleteableAt())));
     }
 
     @Override

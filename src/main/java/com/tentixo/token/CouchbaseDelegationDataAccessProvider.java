@@ -15,6 +15,7 @@
 package com.tentixo.token;
 
 import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.kv.MutateInSpec;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
@@ -52,7 +53,13 @@ public final class CouchbaseDelegationDataAccessProvider implements DelegationDa
 
     @Override
     public @Nullable Delegation getById(String id) {
-        var delegation = collection.get(id).contentAs(Delegation.class);;
+        Delegation delegation;
+        try {
+            delegation = collection.get(id).contentAs(Delegation.class);
+        }  catch (DocumentNotFoundException de) {
+            _logger.debug("Document not found: " + id);
+            return null;
+        }
 
         // Only valid (i.e. status == issue) delegations are retrieved here
         // to mimic the JDBC DAP behavior.

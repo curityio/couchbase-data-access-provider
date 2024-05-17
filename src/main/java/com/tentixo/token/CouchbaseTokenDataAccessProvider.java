@@ -15,6 +15,7 @@
 package com.tentixo.token;
 
 import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.MutateInSpec;
@@ -43,7 +44,12 @@ public final class CouchbaseTokenDataAccessProvider implements TokenDataAccessPr
 
     @Override
     public @Nullable Token getByHash(String tokenHash) {
-        return collection.get(tokenHash).contentAs(Token.class);
+        try {
+            return collection.get(tokenHash).contentAs(Token.class);
+        } catch (DocumentNotFoundException de) {
+            _logger.debug("Document not found: " + tokenHash);
+            return null;
+        }
     }
 
     @Override
@@ -55,7 +61,13 @@ public final class CouchbaseTokenDataAccessProvider implements TokenDataAccessPr
 
     @Override
     public @Nullable String getStatus(String tokenHash) {
-        Token token = collection.get(tokenHash).contentAs(Token.class);
+        Token token;
+        try {
+            token = collection.get(tokenHash).contentAs(Token.class);
+        } catch (DocumentNotFoundException de) {
+            _logger.debug("Document not found: " + tokenHash);
+            return null;
+        }
         return token.getStatus().toString();
     }
 

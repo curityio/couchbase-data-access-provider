@@ -14,6 +14,7 @@
 
 package com.tentixo;
 
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.kv.Expiry;
 import org.slf4j.Logger;
@@ -37,7 +38,12 @@ public final class CouchbaseSessionDataAccessProvider implements SessionDataAcce
     }
     @Override
     public @Nullable Session getSessionById(String id) {
-        return collection.get(id).contentAs(Session.class);
+        try {
+            return collection.get(id).contentAs(Session.class);
+        } catch (DocumentNotFoundException de) {
+            _logger.debug("Document not found: " + id);
+            return null;
+        }
     }
 
     @Override

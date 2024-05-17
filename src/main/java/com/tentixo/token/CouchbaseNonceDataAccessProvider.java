@@ -14,6 +14,7 @@
 
 package com.tentixo.token;
 
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.MutateInSpec;
@@ -44,7 +45,13 @@ public final class CouchbaseNonceDataAccessProvider implements NonceDataAccessPr
     }
     @Override
     public @Nullable String get(String nonce) {
-        Nonce nonceObject = collection.get(nonce).contentAs(Nonce.class);
+        Nonce nonceObject;
+        try {
+            nonceObject = collection.get(nonce).contentAs(Nonce.class);
+        } catch ( DocumentNotFoundException de) {
+            _logger.debug("Document not found: " + nonce);
+            return null;
+        }
         if (!NonceStatus.issued.name().equals(nonceObject.getNonceStatus())) {
             return null;
         }

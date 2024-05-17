@@ -24,7 +24,7 @@ import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
-class IndexCommons {
+public class IndexCommons {
     static void waitUntilReady(Cluster cluster, String bucketName, Duration timeout) {
         waitInner(timeout, () -> failIfIndexesOffline(cluster.httpClient(), bucketName));
     }

@@ -2,7 +2,6 @@ package com.tentixo.configuration;
 
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.error.context.ErrorContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -15,7 +14,7 @@ public class CouchbaseError {
         this.errorEntries = errorEntries;
     }
 
-    public static CouchbaseError create(@NotNull CouchbaseException exception) {
+    public static CouchbaseError create(CouchbaseException exception) {
         ErrorContext context = exception.context();
         if (context == null) {
             return unknown(exception);
@@ -41,7 +40,7 @@ public class CouchbaseError {
         return new CouchbaseError(entries);
     }
 
-    private static CouchbaseError unknown(@NotNull CouchbaseException exception) {
+    private static CouchbaseError unknown(CouchbaseException exception) {
         return new CouchbaseError(Collections.singletonList(new ErrorEntry(UNKNOWN, exception.toString())));
     }
 

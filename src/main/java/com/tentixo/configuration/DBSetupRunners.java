@@ -77,7 +77,6 @@ public class DBSetupRunners  {
                         .toReactorRetry())
                 .block();
         IndexCommons.waitUntilReady(cluster, bucketName, Duration.ofSeconds(60));
-
     }
 
     private void createCollection(Bucket bucket, String scope, String collectionName) {

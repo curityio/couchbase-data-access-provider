@@ -14,11 +14,14 @@
 
 package com.tentixo;
 
-import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.Scope;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.kv.UpsertOptions;
+import org.junit.jupiter.api.*;
 import se.curity.identityserver.sdk.attribute.AccountAttributes;
 import se.curity.identityserver.sdk.attribute.Attribute;
 import se.curity.identityserver.sdk.attribute.scim.v2.ResourceAttributes;
@@ -27,12 +30,12 @@ import se.curity.identityserver.sdk.data.query.ResourceQueryResult;
 import se.curity.identityserver.sdk.data.update.AttributeReplacements;
 import se.curity.identityserver.sdk.data.update.AttributeUpdate;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static com.tentixo.testcontainers.CouchbaseContainerMetadata.BUCKET_NAME;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * You should have a document like below in the database:
@@ -44,10 +47,34 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * }
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class CouchbaseUserAccountDataAccessProviderTest {
+class CouchbaseUserAccountDataAccessProviderTest  extends AbstractCouchbaseRunner{
 
-    private static final CouchbaseUserAccountDataAccessProvider dataAccessProvider =
-            new CouchbaseUserAccountDataAccessProvider(new CouchbaseExecutor(getConfiguration()));
+    private static CouchbaseUserAccountDataAccessProvider dataAccessProvider;
+
+    @BeforeAll
+    public static void setup() throws InterruptedException {
+        couchbaseContainer.start();
+        CouchbaseExecutor ce = new CouchbaseExecutor(getConfiguration(null));
+        dataAccessProvider =
+            new CouchbaseUserAccountDataAccessProvider(ce);
+        Cluster c = Cluster.connect(couchbaseContainer.getConnectionString(), couchbaseContainer.getUsername(), couchbaseContainer.getPassword());
+        c.waitUntilReady(Duration.ofSeconds(2));
+
+        Bucket b = c.bucket(BUCKET_NAME);
+        Scope scope = b.scope(getConfiguration(null).getScope());
+        Collection collection = scope.collection(CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME);
+        String json = """
+             {
+              "id": "node::user::personal_info::morre",
+              "username": "morre",
+              "email": "morre@tentixo.com",
+              "phone": "+375295672678"
+             }
+            """;
+        JsonObject jo = JsonObject.fromJson(json);
+        collection.upsert("node::user::personal_info::morre", jo , UpsertOptions.upsertOptions().durability(DurabilityLevel.MAJORITY_AND_PERSIST_TO_ACTIVE));
+        c.close();
+    }
 
     @Test
     void getByUserNameTest() {
@@ -86,16 +113,16 @@ class CouchbaseUserAccountDataAccessProviderTest {
     }
 
     @Test
-    @Order(2)
+    @Order(3)
     void deleteTest() {
         dataAccessProvider.delete("newGuy");
         var result = dataAccessProvider.getByUserName("newGuy",
                 Inclusions.of(Set.of("email")));
-        assertNull(result.get("email"));
+        assertNull(result);
     }
 
     @Test
-    @Order(3)
+    @Order(2)
     void getAllTest() {
         ResourceQueryResult result = dataAccessProvider.getAll(0, 2);
         assertEquals(2, result.getTotalResults());
@@ -143,57 +170,4 @@ class CouchbaseUserAccountDataAccessProviderTest {
                 Inclusions.of(Set.of("email", "phone")));
     }
 
-    private static CouchbaseDataAccessProviderConfiguration getConfiguration() {
-        return new CouchbaseDataAccessProviderConfiguration() {
-            @Override
-            public String getHost() {
-                return "52.28.76.107";
-            }
-
-            @Override
-            public boolean useTls() {
-                return false;
-            }
-
-            @Override
-            public String getUserName() {
-                return "demo";
-            }
-
-            @Override
-            public String getPassword() {
-                return "5672678i";
-            }
-
-            @Override
-            public String getBucket() {
-                return "demo";
-            }
-
-            @Override
-            public String getScope() {
-                return "_default";
-            }
-
-            @Override
-            public String getCollection() {
-                return "curity";
-            }
-
-            @Override
-            public String getClaimQuery() {
-                return null;
-            }
-
-            @Override
-            public boolean getUseScimParameterNames() {
-                return false;
-            }
-
-            @Override
-            public String id() {
-                return "couchbase";
-            }
-        };
-    }
 }

@@ -14,11 +14,29 @@
 
 package com.tentixo;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.Scope;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.kv.UpsertOptions;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
+import com.tentixo.testcontainers.CouchbaseContainerMetadata;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.couchbase.CouchbaseContainer;
+import org.testcontainers.couchbase.CouchbaseService;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import se.curity.identityserver.sdk.attribute.AccountAttributes;
 import se.curity.identityserver.sdk.attribute.Attribute;
 
+import java.time.Duration;
+
+import static com.tentixo.testcontainers.CouchbaseContainerMetadata.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -30,10 +48,33 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * "password": "something"
  * }
  */
-class CouchbaseCredentialDataAccessProviderTest {
+class CouchbaseCredentialDataAccessProviderTest extends AbstractCouchbaseRunner{
 
-    private static final CouchbaseCredentialDataAccessProvider credentialDataAccessProvider =
-            new CouchbaseCredentialDataAccessProvider(new CouchbaseExecutor(getConfiguration()));
+    private static CouchbaseCredentialDataAccessProvider credentialDataAccessProvider;
+
+    @BeforeAll
+    public static void setup() throws InterruptedException {
+        couchbaseContainer.start();
+        CouchbaseExecutor ce = new CouchbaseExecutor(getConfiguration(null));
+        credentialDataAccessProvider =
+            new CouchbaseCredentialDataAccessProvider(ce);
+        Cluster c = Cluster.connect(couchbaseContainer.getConnectionString(), couchbaseContainer.getUsername(), couchbaseContainer.getPassword());
+        c.waitUntilReady(Duration.ofSeconds(2));
+
+        Bucket b = c.bucket(BUCKET_NAME);
+        Scope scope = b.scope(getConfiguration(null).getScope());
+        Collection collection = scope.collection(CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME);
+        String json = """
+              {
+              "id": "node::user::personal_info::ilya",
+              "username": "ilya",
+              "password": "something"
+              }
+            """;
+        JsonObject jo = JsonObject.fromJson(json);
+        collection.upsert("node::user::personal_info::ilya", jo , UpsertOptions.upsertOptions().durability(DurabilityLevel.MAJORITY_AND_PERSIST_TO_ACTIVE));
+        c.close();
+     }
 
     @Test
     void updatePasswordTest() {
@@ -58,59 +99,5 @@ class CouchbaseCredentialDataAccessProviderTest {
         assertNotNull(result.getSubjectAttributes().get("password"));
         assertEquals("ilya", result.getSubjectAttributes().get("username").getValue());
         assertEquals("something", result.getSubjectAttributes().get("password").getValue());
-    }
-
-    private static CouchbaseDataAccessProviderConfiguration getConfiguration() {
-        return new CouchbaseDataAccessProviderConfiguration() {
-            @Override
-            public String getHost() {
-                return "52.28.76.107";
-            }
-
-            @Override
-            public boolean useTls() {
-                return false;
-            }
-
-            @Override
-            public String getUserName() {
-                return "demo";
-            }
-
-            @Override
-            public String getPassword() {
-                return "5672678i";
-            }
-
-            @Override
-            public String getBucket() {
-                return "demo";
-            }
-
-            @Override
-            public String getScope() {
-                return "_default";
-            }
-
-            @Override
-            public String getCollection() {
-                return "curity";
-            }
-
-            @Override
-            public String getClaimQuery() {
-                return null;
-            }
-
-            @Override
-            public boolean getUseScimParameterNames() {
-                return false;
-            }
-
-            @Override
-            public String id() {
-                return "couchbase";
-            }
-        };
     }
 }

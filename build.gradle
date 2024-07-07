@@ -10,10 +10,15 @@ repositories {
 dependencies {
     implementation group: 'com.couchbase.client', name: 'java-client', version:'3.4.2'
     compileOnly group: 'se.curity.identityserver', name: 'identityserver.sdk', version:'9.1.0'
-    compileOnly group: 'org.slf4j', name: 'slf4j-api', version:'2.0.3'
+    compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '2.0.12'
 
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.9.2'
     testImplementation group: 'se.curity.identityserver', name: 'identityserver.sdk', version:'9.1.0'
+    testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version:'1.19.8'
+    testImplementation group: 'org.testcontainers', name: 'couchbase',  version:'1.19.8'
+    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-api',  version: '3.0.0-beta1'
+    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core',  version: '3.0.0-beta1'
+    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl',  version: '3.0.0-beta2'
 }
 
 group = 'io.curity.identityserver.plugins.datasources'
@@ -33,4 +38,9 @@ task createPluginDir(type: Copy, dependsOn: jar) {
     from configurations.runtimeClasspath
     from jar
     into layout.buildDirectory.file(project.name)
+}
+
+test {
+    useJUnitPlatform()
+    testLogging.showStandardStreams = true
 }

@@ -1,6 +1,5 @@
 package com.tentixo.configuration;
 
-
 import com.couchbase.client.core.error.CollectionExistsException;
 import com.couchbase.client.core.error.IndexNotFoundException;
 import com.couchbase.client.core.error.InternalServerFailureException;

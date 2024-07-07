@@ -33,6 +33,7 @@ import se.curity.identityserver.sdk.data.query.ResourceQuery.AttributesEnumerati
 import se.curity.identityserver.sdk.data.query.ResourceQueryResult;
 import se.curity.identityserver.sdk.plugin.ManagedObject;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,13 +60,13 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
 
     private Collection collection;
 
-    private final String GET_BY_PARAMETER_QUERY = "SELECT %s.* FROM `%s`.%s.`%s`" +
+    private final String GET_BY_PARAMETER_QUERY = "SELECT `%s`.* FROM `%s`.%s.`%s`" +
                                                   " WHERE %s = \"%s\" AND CONTAINS(META().id, \"node::user::personal_info::\")";
     private final String UPDATE_PASSWORD_QUERY = "UPDATE `%s`.%s.`%s` SET `password` = \"%s\"" +
                                                  " WHERE META().id = \"node::user::personal_info::%s\"";
-    private final String FIND_ALL_PAGEABLE_QUERY = "SELECT %s.* FROM `%s`.%s.`%s`" +
+    private final String FIND_ALL_PAGEABLE_QUERY = "SELECT `%s`.* FROM `%s`.%s.`%s`" +
                                                    " WHERE CONTAINS(META().id,\"node::user::personal_info::\") OFFSET %s LIMIT %s";
-    private final String FIND_ALL_QUERY = "SELECT %s.* FROM `%s`.%s.`%s`" +
+    private final String FIND_ALL_QUERY = "SELECT `%s`.* FROM `%s`.%s.`%s`" +
                                           " WHERE META().id = \"node::user::personal_info::%s\"";
 
     public CouchbaseExecutor(CouchbaseDataAccessProviderConfiguration configuration) {
@@ -80,6 +81,7 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      */
     private void init(CouchbaseDataAccessProviderConfiguration configuration) {
         try {
+            this.configuration = configuration;
             var bucketHost = configuration.getHost();
             var connectionString = configuration.useTls() ? "couchbases://" + bucketHost : "couchbase://" + bucketHost;
             var username = configuration.getUserName();
@@ -94,11 +96,12 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
                 bucket.collections().createScope(configuration.getScope());
                 this.scope = bucket.scope(configuration.getScope());
             }
-            DBSetupRunners setupRunners =  new DBSetupRunners();
+            DBSetupRunners setupRunners = new DBSetupRunners();
             setupRunners.run(cluster, bucket, scope);
-            this.configuration = configuration;
+            this.collection = scope.collection(ACCOUNT_COLLECTION_NAME);
         } catch (CouchbaseException e) {
             _logger.error("Init error! {}", e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 

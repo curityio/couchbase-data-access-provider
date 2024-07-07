@@ -14,14 +14,24 @@
 
 package com.tentixo;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.Scope;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.kv.UpsertOptions;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.curity.identityserver.sdk.Nullable;
 import se.curity.identityserver.sdk.attribute.AttributeTableView;
 import se.curity.identityserver.sdk.attribute.Attributes;
 
+import java.time.Duration;
 import java.util.List;
 
+import static com.tentixo.testcontainers.CouchbaseContainerMetadata.BUCKET_NAME;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
@@ -39,7 +49,38 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * "to": "something"
  * }
  */
-class CouchbaseExecutorTest {
+class CouchbaseExecutorTest  extends AbstractCouchbaseRunner{
+
+    @BeforeAll
+    public static void setup() throws InterruptedException {
+        couchbaseContainer.start();
+        CouchbaseExecutor ce = new CouchbaseExecutor(getConfiguration(null));
+        new CouchbaseCredentialDataAccessProvider(ce);
+        Cluster c = Cluster.connect(couchbaseContainer.getConnectionString(), couchbaseContainer.getUsername(), couchbaseContainer.getPassword());
+        c.waitUntilReady(Duration.ofSeconds(2));
+
+        Bucket b = c.bucket(BUCKET_NAME);
+        Scope scope = b.scope(getConfiguration(null).getScope());
+        Collection collection = scope.collection(CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME);
+        String json = """
+              {
+                  "id": "edge::user_org::morre",
+                  "to": "something"
+              }
+            """;
+        String json2 = """
+              {
+                  "id": "edge::user_org::subject",
+                  "to": "something"
+              }
+            """;
+        JsonObject jo = JsonObject.fromJson(json);
+        JsonObject jo2 = JsonObject.fromJson(json2);
+        b.waitUntilReady(Duration.ofSeconds(10));
+        collection.upsert("edge::user_org::morre", jo , UpsertOptions.upsertOptions().durability(DurabilityLevel.MAJORITY_AND_PERSIST_TO_ACTIVE));
+        collection.upsert("edge::user_org::subject", jo2 , UpsertOptions.upsertOptions().durability(DurabilityLevel.MAJORITY_AND_PERSIST_TO_ACTIVE));
+        c.close();
+    }
 
     @Test
     void executeQueryTest() {
@@ -53,7 +94,7 @@ class CouchbaseExecutorTest {
                                                     "org_permissions from `%s`.`%s`.`%s` data " +
                                                     "WHERE META().id = \"edge::user_org::morre\"",
                                             configuration.getBucket(), configuration.getScope(),
-                                            configuration.getCollection()))))
+                                        CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME))))
             );
         }
         List<@Nullable ?> resultColumns = result.getColumnValues("org_permissions");
@@ -65,7 +106,7 @@ class CouchbaseExecutorTest {
     void getAttributeTest() {
         var configuration =
                 getConfiguration("SELECT ENCODE_JSON(data.`to`) as " +
-                                "org_permissions from `:bucket`.`:scope`.`:collection` data " +
+                                "org_permissions from `:bucket`.`:scope`.`curity-accounts` data " +
                                 "WHERE META().id = \"edge::user_org:::subject\"");
         CouchbaseAttributeDataAccessProvider dataAccessProvider
                 = new CouchbaseAttributeDataAccessProvider(configuration, new CouchbaseExecutor(configuration));
@@ -75,57 +116,4 @@ class CouchbaseExecutorTest {
         assertEquals(1, resultColumns.size());
     }
 
-    private CouchbaseDataAccessProviderConfiguration getConfiguration(String query) {
-        return new CouchbaseDataAccessProviderConfiguration() {
-            @Override
-            public String getHost() {
-                return "localhost"; //your host
-            }
-
-            @Override
-            public boolean useTls() {
-                return false;
-            }
-
-            @Override
-            public String getUserName() {
-                return "cms-admin"; //your username
-            }
-
-            @Override
-            public String getPassword() {
-                return "cms-admin"; //your password
-            }
-
-            @Override
-            public String getBucket() {
-                return "curity";
-            }
-
-            @Override
-            public String getScope() {
-                return "_default";
-            }
-
-            @Override
-            public String getCollection() {
-                return "curity";
-            }
-
-            @Override
-            public String getClaimQuery() {
-                return ofNullable(query).orElse(query);
-            }
-
-            @Override
-            public boolean getUseScimParameterNames() {
-                return false;
-            }
-
-            @Override
-            public String id() {
-                return "couchbase";
-            }
-        };
-    }
 }

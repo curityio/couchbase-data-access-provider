@@ -14,5 +14,5 @@
 
 package com.tentixo;
 
-public final class CouchbaseNonceDataAccessProvider extends AbstractCouchbaseRunner {
+public final class CouchbaseNonceDataAccessProviderTest extends AbstractCouchbaseRunner {
 }

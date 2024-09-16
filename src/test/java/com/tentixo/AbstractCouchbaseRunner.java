@@ -2,7 +2,6 @@ package com.tentixo;
 
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import com.tentixo.testcontainers.CouchbaseContainerMetadata;
-import org.junit.jupiter.api.AfterAll;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.couchbase.CouchbaseContainer;
 import org.testcontainers.couchbase.CouchbaseService;
@@ -17,17 +16,17 @@ import static com.tentixo.testcontainers.CouchbaseContainerMetadata.bucketDefini
 @Testcontainers
 public class AbstractCouchbaseRunner {
     @Container
-    final static CouchbaseContainer couchbaseContainer = new CouchbaseContainer(COUCHBASE_IMAGE_ENTERPRISE)
-        .withCredentials(CouchbaseContainerMetadata.USERNAME, CouchbaseContainerMetadata.PASSWORD)
-        .withEnabledServices(CouchbaseService.KV, CouchbaseService.QUERY, CouchbaseService.INDEX)
-        .withBucket(bucketDefinition.withQuota(100))
-        .withStartupAttempts(10)
-        .withStartupTimeout(Duration.ofSeconds(90))
-        .waitingFor(Wait.forHealthcheck());
+    final static CouchbaseContainer couchbaseContainer;
 
-    @AfterAll
-    public static void teardown() {
-        couchbaseContainer.stop();
+    static {
+         couchbaseContainer = new CouchbaseContainer(COUCHBASE_IMAGE_ENTERPRISE)
+                .withCredentials(CouchbaseContainerMetadata.USERNAME, CouchbaseContainerMetadata.PASSWORD)
+                .withEnabledServices(CouchbaseService.KV, CouchbaseService.QUERY, CouchbaseService.INDEX)
+                .withBucket(bucketDefinition.withQuota(100))
+                .withStartupAttempts(10)
+                .withStartupTimeout(Duration.ofSeconds(90))
+                .waitingFor(Wait.forHealthcheck());
+        couchbaseContainer.start();
     }
 
     public static CouchbaseDataAccessProviderConfiguration getConfiguration(String claim) {

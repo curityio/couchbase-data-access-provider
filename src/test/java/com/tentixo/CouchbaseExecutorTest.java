@@ -21,7 +21,6 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.UpsertOptions;
-import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.curity.identityserver.sdk.Nullable;
@@ -34,7 +33,6 @@ import java.util.List;
 import static com.tentixo.testcontainers.CouchbaseContainerMetadata.BUCKET_NAME;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
-import static java.util.Optional.ofNullable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -53,7 +51,6 @@ class CouchbaseExecutorTest  extends AbstractCouchbaseRunner{
 
     @BeforeAll
     public static void setup() throws InterruptedException {
-        couchbaseContainer.start();
         CouchbaseExecutor ce = new CouchbaseExecutor(getConfiguration(null));
         new CouchbaseCredentialDataAccessProvider(ce);
         Cluster c = Cluster.connect(couchbaseContainer.getConnectionString(), couchbaseContainer.getUsername(), couchbaseContainer.getPassword());

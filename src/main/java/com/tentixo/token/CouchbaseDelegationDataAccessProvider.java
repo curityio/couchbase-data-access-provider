@@ -18,7 +18,6 @@ import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.kv.MutateInSpec;
-import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.tentixo.CouchbaseExecutor;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import org.slf4j.Logger;
@@ -92,7 +91,7 @@ public final class CouchbaseDelegationDataAccessProvider implements DelegationDa
     private final String GET_DELEGATION_BY_PARAMETER_QUERY_PAGINATED = "SELECT `%s`.* FROM `%s`" +
             " WHERE %s = \"%s\" LIMIT %s OFFSET %s";
 
-    private Stream<Delegation> querydelegationByParam(String paramName, String value, long startIndex, long count) {
+    private Stream<Delegation> queryDelegationByParam(String paramName, String value, long startIndex, long count) {
 
         String query;
         if (startIndex > 0 && count > 0) {
@@ -111,24 +110,24 @@ public final class CouchbaseDelegationDataAccessProvider implements DelegationDa
     }
 
 
-    private Stream<Delegation> guerydelegationByParam(String paramName, String value) {
-        return querydelegationByParam(paramName, value, -1, -1);
+    private Stream<Delegation> gueryDelegationByParam(String paramName, String value) {
+        return queryDelegationByParam(paramName, value, -1, -1);
     }
 
     @Override
     public @Nullable Delegation getByAuthorizationCodeHash(String authorizationCodeHash) {
-        return guerydelegationByParam("authorizationCodeHash", authorizationCodeHash).findFirst().orElse(null);
+        return gueryDelegationByParam("authorizationCodeHash", authorizationCodeHash).findFirst().orElse(null);
     }
 
 
     @Override
     public Collection<? extends Delegation> getByOwner(String owner, long startIndex, long count) {
-        return querydelegationByParam("owner", owner, startIndex, count).toList();
+        return queryDelegationByParam("owner", owner, startIndex, count).toList();
     }
 
     @Override
     public Collection<? extends Delegation> getAllActive(long startIndex, long count) {
-        return querydelegationByParam("status", DelegationStatus.issued.name(), startIndex, count).toList();
+        return queryDelegationByParam("status", DelegationStatus.issued.name(), startIndex, count).toList();
     }
 
     private final String COUNT_DELEGATION_BY_PARAMETER_QUERY = "SELECT COUNT(1) FROM `%s`" +

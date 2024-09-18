@@ -18,6 +18,8 @@ import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.kv.MutateInSpec;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import com.tentixo.CouchbaseExecutor;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import org.slf4j.Logger;
@@ -31,6 +33,8 @@ import se.curity.identityserver.sdk.datasource.DelegationDataAccessProvider;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
+
+import static com.tentixo.CouchbaseExecutor.QUERY_OPTIONS;
 
 /**
  * https://curity.io/docs/idsvr-java-plugin-sdk/latest/se/curity/identityserver/sdk/datasource/DelegationDataAccessProvider.html
@@ -106,7 +110,7 @@ public final class CouchbaseDelegationDataAccessProvider implements DelegationDa
     }
 
     private Stream<Delegation> queryDelegation(String query) {
-        return scope.query(query).rowsAs(Delegation.class).stream();
+        return scope.query(query, QUERY_OPTIONS).rowsAs(Delegation.class).stream();
     }
 
 
@@ -136,13 +140,13 @@ public final class CouchbaseDelegationDataAccessProvider implements DelegationDa
     @Override
     public long getCountAllActive() {
         String query = String.format(COUNT_DELEGATION_BY_PARAMETER_QUERY, collection.name(), "status", DelegationStatus.issued.name());
-        return scope.query(query).rowsAs(Long.class).getFirst();
+        return scope.query(query, QUERY_OPTIONS).rowsAs(Long.class).getFirst();
     }
 
     @Override
     public long getCountByOwner(String owner) {
         String query = String.format(COUNT_DELEGATION_BY_PARAMETER_QUERY, collection.name(), "owner", owner);
-        return scope.query(query).rowsAs(Long.class).getFirst();
+        return scope.query(query, QUERY_OPTIONS).rowsAs(Long.class).getFirst();
     }
 
     @Override

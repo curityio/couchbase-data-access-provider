@@ -15,9 +15,11 @@
 package com.tentixo;
 
 import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.java.*;
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.*;
 import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import com.tentixo.configuration.DBSetupRunners;
 import org.slf4j.Logger;
@@ -27,7 +29,6 @@ import se.curity.identityserver.sdk.attribute.AccountAttributes;
 import se.curity.identityserver.sdk.data.query.ResourceQuery.AttributesEnumeration;
 import se.curity.identityserver.sdk.data.query.ResourceQueryResult;
 import se.curity.identityserver.sdk.plugin.ManagedObject;
-import se.curity.identityserver.sdk.service.Json;
 
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +60,8 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
     private final String FIND_ALL_QUERY = "SELECT `%s`.* FROM `%s`.%s.`%s`" +
                                           " WHERE META().id = \"node::user::personal_info::%s\"";
 
+    public static final QueryOptions QUERY_OPTIONS = QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS);
+
     public CouchbaseExecutor(CouchbaseDataAccessProviderConfiguration configuration) {
         super(configuration);
         init(configuration);
@@ -80,6 +83,7 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
             ClusterOptions options = ClusterOptions.clusterOptions(username, password)
                     .environment(env -> env
                            .jsonSerializer(CurityJsonSerializer.create())
+
                     );
             this.cluster = Cluster.connect(connectionString,options);
 
@@ -121,7 +125,7 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      * @return a list of maps representing the rows in the result
      */
     public List<Map<String, Object>> executeQuery(String query) {
-        final var result = cluster.query(query);
+        final var result = cluster.query(query, QUERY_OPTIONS);
         return result.rowsAsObject()
                 .stream()
                 .map(JsonObject::toMap)

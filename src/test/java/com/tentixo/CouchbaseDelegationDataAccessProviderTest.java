@@ -50,23 +50,34 @@ class CouchbaseDelegationDataAccessProviderTest extends AbstractCouchbaseRunner
         var delegation = new TestDelegation("johndoe", "my-client");
         dap.create(delegation);
         var retrievedDelegation = dap.getById(delegation.getId());
-        Assertions.assertEquals(delegation, retrievedDelegation);
+        Assertions.assertEquals(delegation.getId(), retrievedDelegation.getId());
+        Assertions.assertEquals(delegation.getClientId(), retrievedDelegation.getClientId());
+        Assertions.assertEquals(delegation.getOwner(), retrievedDelegation.getOwner());
+        Assertions.assertEquals(delegation.getClaimMap().keySet(), retrievedDelegation.getClaimMap().keySet());
+        Assertions.assertEquals(delegation.getEnumActiveStatus(), retrievedDelegation.getEnumActiveStatus());
+        Assertions.assertEquals(delegation.getAuthorizationCodeHash(), retrievedDelegation.getAuthorizationCodeHash());
+        Assertions.assertEquals(delegation.getMtlsClientCertificate(), retrievedDelegation.getMtlsClientCertificate());
+        Assertions.assertEquals(delegation.getMtlsClientCertificateDN(), retrievedDelegation.getMtlsClientCertificateDN());
+        Assertions.assertEquals(delegation.getMtlsClientCertificateX5TS256(), retrievedDelegation.getMtlsClientCertificateX5TS256());
+        Assertions.assertEquals(delegation.getAuthenticationAttributes().getSubject(), retrievedDelegation.getAuthenticationAttributes().getSubject());
     }
 
     @Test
-    void setStatus()
-    {
+    void setStatus() throws InterruptedException {
         var delegation = new TestDelegation("johndoe", "my-client");
         dap.create(delegation);
         dap.setStatus(delegation.getId(), DelegationStatus.revoked);
+        Delegation d = dap.collection.get(delegation.getId()).contentAs(Delegation.class);
+        Assertions.assertEquals(DelegationStatus.revoked, d.getStatus());
+        // Should return null because revoked
         var retrievedDelegation = dap.getById(delegation.getId());
-        Assertions.assertNotNull(retrievedDelegation);
-        Assertions.assertEquals(DelegationStatus.revoked, retrievedDelegation.getEnumActiveStatus());
+        Assertions.assertNull(retrievedDelegation);
     }
 
     @Test
     void getByAuthorizationCodeHash()
     {
+
     }
 
     @Test

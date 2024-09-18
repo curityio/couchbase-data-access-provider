@@ -43,6 +43,8 @@ public final class CouchbaseSessionDataAccessProviderTest extends AbstractCouchb
         var session = new Session(sessionId, Instant.now().plus(Duration.ofSeconds(10L)), "{\"foo\": \"bar\")");
         dap.insertSession(session);
         var retrievedSession = dap.getSessionById(sessionId);
-        Assertions.assertEquals(session, retrievedSession);
+        Assertions.assertEquals(session.getExpiresAt(), retrievedSession.getExpiresAt());
+        Assertions.assertEquals(session.getData(), retrievedSession.getData());
+        Assertions.assertEquals(session.getId(), retrievedSession.getId());
     }
 }

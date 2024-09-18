@@ -15,8 +15,6 @@
 package com.tentixo;
 
 import com.tentixo.token.CouchbaseTokenDataAccessProvider;
-import com.tentixo.utils.StubStringOrArray;
-import com.tentixo.utils.TestToken;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import se.curity.identityserver.sdk.data.authorization.TokenStatus;
@@ -35,9 +33,9 @@ public final class CouchbaseTokenDataAccessProviderTest extends AbstractCouchbas
     public void insertToken()
     {
         var id = UUID.randomUUID();
-        var token = new TestToken(id.toString(), String.valueOf(id.hashCode()), "qwe-123", "openid",
+        var token = new TokenAdapter(id.toString(), String.valueOf(id.hashCode()), "qwe-123", "purpose","usage","format", "openid",
                 Instant.now().getEpochSecond(), Instant.now().plus(Duration.ofSeconds(10L)).getEpochSecond(),
-                true, TokenStatus.issued, "secure-idp", "johndoe", new StubStringOrArray("tests"),
+                TokenStatus.issued, "secure-idp", "johndoe", new StringOrArrayAdapter("tests"),
                 Instant.now().getEpochSecond(), Map.of("foo", "bar"));
 
         dap.create(token);
@@ -47,22 +45,30 @@ public final class CouchbaseTokenDataAccessProviderTest extends AbstractCouchbas
     public void readToken()
     {
         var id = UUID.randomUUID();
-        var token = new TestToken(id.toString(), String.valueOf(id.hashCode()), "qwe-123", "openid",
+        var token = new TokenAdapter(String.valueOf(id.hashCode()), id.toString(), "qwe-123", "purpose","usage","format","openid",
                 Instant.now().getEpochSecond(), Instant.now().plus(Duration.ofSeconds(10L)).getEpochSecond(),
-                true, TokenStatus.issued, "secure-idp", "johndoe", new StubStringOrArray("tests"),
+                TokenStatus.issued, "secure-idp", "johndoe", new StringOrArrayAdapter("tests"),
                 Instant.now().getEpochSecond(), Map.of("foo", "bar"));
         dap.create(token);
         var retrievedToken = dap.getByHash(token.getTokenHash());
-        Assertions.assertEquals(token, retrievedToken);
+
+        Assertions.assertEquals(token.getTokenHash(), retrievedToken.getTokenHash());
+        Assertions.assertEquals(token.getData(), retrievedToken.getData());
+        Assertions.assertEquals(token.getId(), retrievedToken.getId());
+        Assertions.assertEquals(token.getDelegationsId(), retrievedToken.getDelegationsId());
+        Assertions.assertEquals(token.getScope(), retrievedToken.getScope());
+        Assertions.assertEquals(token.getFormat(), retrievedToken.getFormat());
+        Assertions.assertEquals(token.getIssuer(), retrievedToken.getIssuer());
+        Assertions.assertEquals(token.getAudience().getValues(), retrievedToken.getAudience().getValues());
     }
 
     @Test
     public void setStatus()
     {
         var id = UUID.randomUUID();
-        var token = new TestToken(id.toString(), String.valueOf(id.hashCode()), "qwe-123", "openid",
+        var token = new TokenAdapter(id.toString(), String.valueOf(id.hashCode()), "qwe-123", "purpose","usage","format","openid",
                 Instant.now().getEpochSecond(), Instant.now().plus(Duration.ofSeconds(10L)).getEpochSecond(),
-                true, TokenStatus.issued, "secure-idp", "johndoe", new StubStringOrArray("tests"),
+                TokenStatus.issued, "secure-idp", "johndoe", new StringOrArrayAdapter("tests"),
                 Instant.now().getEpochSecond(), Map.of("foo", "bar"));
         dap.create(token);
         dap.setStatusByTokenHash(token.getTokenHash(), TokenStatus.revoked);

@@ -40,7 +40,7 @@ public final class CouchbaseDelegationDataAccessProvider implements DelegationDa
     public static final String DELEGATION_COLLECTION_NAME = "curity-delegations";
     private final CouchbaseExecutor _couchbaseExecutor;
     private final Scope scope;
-    private final com.couchbase.client.java.Collection collection;
+    public final com.couchbase.client.java.Collection collection;
     private final CouchbaseDataAccessProviderConfiguration _configuration;
 
     public CouchbaseDelegationDataAccessProvider(CouchbaseDataAccessProviderConfiguration _configuration, CouchbaseExecutor couchbaseExecutor) {
@@ -77,7 +77,7 @@ public final class CouchbaseDelegationDataAccessProvider implements DelegationDa
     @Override
     public long setStatus(String id, DelegationStatus status) {
         try {
-            collection.mutateIn(id, List.of(MutateInSpec.replace("status", status.name())));
+            collection.mutateIn(id, List.of(MutateInSpec.replace("status", status)));
             return 1;
         }catch (CouchbaseException ce) {
             _logger.error(ce.getMessage());

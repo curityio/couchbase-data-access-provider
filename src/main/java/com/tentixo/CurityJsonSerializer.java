@@ -13,9 +13,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.cfg.ConstructorDetector;
-import com.fasterxml.jackson.databind.deser.ValueInstantiator;
-import com.fasterxml.jackson.databind.deser.impl.JDKValueInstantiators;
-import com.fasterxml.jackson.databind.deser.std.StdValueInstantiator;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -24,14 +21,13 @@ import com.fasterxml.jackson.module.paranamer.ParanamerModule;
 import com.tentixo.token.DelegationAdapter;
 import se.curity.identityserver.sdk.attribute.Attributes;
 import se.curity.identityserver.sdk.attribute.AuthenticationAttributes;
-import se.curity.identityserver.sdk.data.Session;
 import se.curity.identityserver.sdk.data.StringOrArray;
 import se.curity.identityserver.sdk.data.authorization.Delegation;
 import se.curity.identityserver.sdk.data.authorization.Token;
+import se.curity.identityserver.sdk.data.tokens.DefaultStringOrArray;
 import se.curity.identityserver.sdk.errors.NoSingleValueException;
 
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -113,7 +109,7 @@ public class CurityJsonSerializer implements JsonSerializer {
                 })
                 .addAbstractTypeMapping(Token.class, TokenAdapter.class)
                 .addAbstractTypeMapping(Delegation.class, DelegationAdapter.class)
-                .addAbstractTypeMapping(StringOrArray.class, StringOrArrayAdapter.class);
+                .addAbstractTypeMapping(StringOrArray.class, DefaultStringOrArray.class);
         mapper.registerModule(simpleModule);
         mapper.registerModule(new ParameterNamesModule());
         mapper.registerModule(new ParanamerModule());

@@ -109,7 +109,7 @@ public class CurityJsonSerializer implements JsonSerializer {
                 })
                 .addAbstractTypeMapping(Token.class, TokenAdapter.class)
                 .addAbstractTypeMapping(Delegation.class, DelegationAdapter.class)
-                .addAbstractTypeMapping(StringOrArray.class, DefaultStringOrArray.class);
+                .addAbstractTypeMapping(StringOrArray.class, StringOrArrayAdapter.class);
         mapper.registerModule(simpleModule);
         mapper.registerModule(new ParameterNamesModule());
         mapper.registerModule(new ParanamerModule());

@@ -27,6 +27,7 @@ import java.util.UUID;
 
 public final class CouchbaseTokenDataAccessProviderTest extends AbstractCouchbaseRunner
 {
+
     private final CouchbaseTokenDataAccessProvider dap
             = new CouchbaseTokenDataAccessProvider(new CouchbaseExecutor(getConfiguration(null)));
 

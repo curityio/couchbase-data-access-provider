@@ -39,6 +39,7 @@ public class CurityJsonSerializer implements JsonSerializer {
 
     private final ObjectMapper mapper =  JsonMapper.builder()
             .constructorDetector(ConstructorDetector.USE_PROPERTIES_BASED)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .build();
     /**
      * Creates an instance without encryption support.

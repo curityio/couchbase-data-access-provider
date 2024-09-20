@@ -199,15 +199,15 @@ public class TokenAdapter implements Token {
     }
 
     @Override
-    @JsonIgnore
     public TokenStatus getEnumActiveStatus() {
         return TokenStatus.issued;
     }
 
     @Override
-    @JsonIgnore
     public boolean isActive() {
         return Token.super.isActive();
     }
+
+
 
 }

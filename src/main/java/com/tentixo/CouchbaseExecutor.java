@@ -114,7 +114,11 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      */
     @Override
     public void close() {
-        cluster.disconnect();
+        bucket = null;
+        scope = null;
+        collection = null;
+        cluster.close();
+        cluster = null;
     }
 
     /**

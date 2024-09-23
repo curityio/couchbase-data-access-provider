@@ -14,6 +14,8 @@
 
 package com.tentixo;
 
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
+import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import se.curity.identityserver.sdk.data.Session;
@@ -24,11 +26,12 @@ import java.util.UUID;
 
 public final class CouchbaseSessionDataAccessProviderTest extends AbstractCouchbaseRunner
 {
+    private final CouchbaseDataAccessProviderConfiguration configuration = getConfiguration(null);
+
     @Test
     public void insertSession()
     {
-        var executor = new CouchbaseExecutor(getConfiguration(null));
-        var dap = new CouchbaseSessionDataAccessProvider(executor);
+        var dap = new CouchbaseSessionDataAccessProvider(new CouchbaseConnectionManagedObject(configuration), configuration);
         var sessionId = UUID.randomUUID().toString();
         var session = new Session(sessionId, Instant.now().plus(Duration.ofSeconds(10L)), "{\"foo\": \"bar\")");
         dap.insertSession(session);
@@ -37,8 +40,7 @@ public final class CouchbaseSessionDataAccessProviderTest extends AbstractCouchb
     @Test
     public void readSession()
     {
-        var executor = new CouchbaseExecutor(getConfiguration(null));
-        var dap = new CouchbaseSessionDataAccessProvider(executor);
+        var dap = new CouchbaseSessionDataAccessProvider(new CouchbaseConnectionManagedObject(configuration), configuration);
         var sessionId = UUID.randomUUID().toString();
         var session = new Session(sessionId, Instant.now().plus(Duration.ofSeconds(10L)), "{\"foo\": \"bar\")");
         dap.insertSession(session);

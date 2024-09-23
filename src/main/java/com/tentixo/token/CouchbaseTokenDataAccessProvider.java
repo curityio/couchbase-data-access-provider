@@ -19,7 +19,7 @@ import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.MutateInSpec;
-import com.tentixo.CouchbaseExecutor;
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
@@ -34,12 +34,10 @@ public final class CouchbaseTokenDataAccessProvider implements TokenDataAccessPr
 
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseTokenDataAccessProvider.class);
     public static final String TOKEN_COLLECTION_NAME = "curity-tokens";
-    private final CouchbaseExecutor _couchbaseExecutor;
     private final Collection collection;
 
-    public CouchbaseTokenDataAccessProvider(CouchbaseExecutor couchbaseExecutor) {
-        _couchbaseExecutor = couchbaseExecutor;
-        this.collection = couchbaseExecutor.getScope().collection(TOKEN_COLLECTION_NAME);
+    public CouchbaseTokenDataAccessProvider(CouchbaseConnectionManagedObject clusterConnection) {
+        this.collection = clusterConnection.getScope().collection(TOKEN_COLLECTION_NAME);
     }
 
     @Override

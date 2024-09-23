@@ -16,7 +16,8 @@ package com.tentixo;
 
 import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.kv.Expiry;
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
+import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
@@ -32,9 +33,9 @@ public final class CouchbaseSessionDataAccessProvider implements SessionDataAcce
     private final CouchbaseExecutor _couchbaseExecutor;
     private final Collection collection;
 
-    public CouchbaseSessionDataAccessProvider(CouchbaseExecutor couchbaseExecutor) {
-        _couchbaseExecutor = couchbaseExecutor;
-        this.collection = couchbaseExecutor.getScope().collection(SESSION_COLLECTION_NAME);
+    public CouchbaseSessionDataAccessProvider(CouchbaseConnectionManagedObject clusterConnection, CouchbaseDataAccessProviderConfiguration configuration) {
+        _couchbaseExecutor = new CouchbaseExecutor(clusterConnection, configuration);
+        this.collection = clusterConnection.getScope().collection(SESSION_COLLECTION_NAME);
     }
     @Override
     public @Nullable Session getSessionById(String id) {

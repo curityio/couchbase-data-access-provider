@@ -16,7 +16,7 @@ package com.tentixo;
 
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.kv.MutationResult;
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -29,17 +29,12 @@ import java.util.Map;
 public final class CouchbaseBucketDataAccessProvider implements BucketDataAccessProvider {
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseBucketDataAccessProvider.class);
 
-    private final CouchbaseBucketDataAccessProvider _configuration;
-
     private static final Marker MASK_MARKER= MarkerFactory.getMarker("MASK");
     public static final String BUCKET_COLLECTION_NAME = "curity-buckets";
-    private final CouchbaseExecutor _couchbaseExecutor;
     private final Collection collection;
 
-    public CouchbaseBucketDataAccessProvider(CouchbaseBucketDataAccessProvider configuration, CouchbaseExecutor couchbaseExecutor) {
-        _configuration = configuration;
-        this._couchbaseExecutor = couchbaseExecutor;
-        this.collection = couchbaseExecutor.getScope().collection(BUCKET_COLLECTION_NAME);
+    public CouchbaseBucketDataAccessProvider(CouchbaseConnectionManagedObject clusterConnection) {
+        this.collection = clusterConnection.getScope().collection(BUCKET_COLLECTION_NAME);
     }
 
     @Override

@@ -14,21 +14,19 @@
 
 package com.tentixo;
 
-import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.*;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
-import com.tentixo.configuration.DBSetupRunners;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
 import se.curity.identityserver.sdk.attribute.AccountAttributes;
 import se.curity.identityserver.sdk.data.query.ResourceQuery.AttributesEnumeration;
 import se.curity.identityserver.sdk.data.query.ResourceQueryResult;
-import se.curity.identityserver.sdk.plugin.ManagedObject;
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,87 +36,34 @@ import java.util.Set;
 import static com.tentixo.CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME;
 import static java.util.Optional.ofNullable;
 
-public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProviderConfiguration> {
+public class CouchbaseExecutor {
 
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseExecutor.class);
-    private CouchbaseDataAccessProviderConfiguration configuration;
 
-    private Cluster cluster;
-
-    private Bucket bucket;
-
-    private Scope scope;
-
-    private Collection collection;
+    private final CouchbaseConnectionManagedObject _clusterConnection;
 
     private final String GET_BY_PARAMETER_QUERY = "SELECT `%s`.* FROM `%s`.%s.`%s`" +
-                                                  " WHERE %s = \"%s\" AND CONTAINS(META().id, \"node::user::personal_info::\")";
+            " WHERE %s = \"%s\" AND CONTAINS(META().id, \"node::user::personal_info::\")";
     private final String UPDATE_PASSWORD_QUERY = "UPDATE `%s`.%s.`%s` SET `password` = \"%s\"" +
-                                                 " WHERE META().id = \"node::user::personal_info::%s\"";
+            " WHERE META().id = \"node::user::personal_info::%s\"";
     private final String FIND_ALL_PAGEABLE_QUERY = "SELECT `%s`.* FROM `%s`.%s.`%s`" +
-                                                   " WHERE CONTAINS(META().id,\"node::user::personal_info::\") OFFSET %s LIMIT %s";
+            " WHERE CONTAINS(META().id,\"node::user::personal_info::\") OFFSET %s LIMIT %s";
     private final String FIND_ALL_QUERY = "SELECT `%s`.* FROM `%s`.%s.`%s`" +
-                                          " WHERE META().id = \"node::user::personal_info::%s\"";
+            " WHERE META().id = \"node::user::personal_info::%s\"";
 
-    public static final QueryOptions QUERY_OPTIONS = QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS);
+    public static final QueryOptions QUERY_OPTIONS = QueryOptions.queryOptions()
+            .scanConsistency(QueryScanConsistency.REQUEST_PLUS);
 
-    public CouchbaseExecutor(CouchbaseDataAccessProviderConfiguration configuration) {
-        super(configuration);
-        init(configuration);
-    }
+    private final Collection _accountCollection;
+    private final CouchbaseDataAccessProviderConfiguration _configuration;
+    private final Cluster _cluster;
 
-    /**
-     * Initializes the CouchbaseDataAccessProvider instance with the provided configuration.
-     *
-     * @param configuration The configuration object containing the necessary information for initialization.
-     */
-    private void init(CouchbaseDataAccessProviderConfiguration configuration) {
-        try {
-            this.configuration = configuration;
-            var bucketHost = configuration.getHost();
-            var connectionString = configuration.useTls() ? "couchbases://" + bucketHost : "couchbase://" + bucketHost;
-            var username = configuration.getUserName();
-            var password = configuration.getPassword();
-
-            ClusterOptions options = ClusterOptions.clusterOptions(username, password)
-                    .environment(env -> env
-                           .jsonSerializer(CurityJsonSerializer.create())
-
-                    );
-            this.cluster = Cluster.connect(connectionString,options);
-
-
-            this.bucket = cluster.bucket(configuration.getBucket());
-            if (bucket == null) {
-                throw new RuntimeException("Given bucket does not exist: " + configuration.getBucket());
-            }
-            this.scope = bucket.scope(configuration.getScope());
-            if (this.scope == null) {
-                bucket.collections().createScope(configuration.getScope());
-                this.scope = bucket.scope(configuration.getScope());
-            }
-            DBSetupRunners setupRunners = new DBSetupRunners();
-            setupRunners.run(cluster, bucket, scope);
-            this.collection = scope.collection(ACCOUNT_COLLECTION_NAME);
-
-
-
-        } catch (CouchbaseException e) {
-            _logger.error("Init error! {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
-
-        /**
-     * Closes the connection to the cluster.
-     */
-    @Override
-    public void close() {
-        bucket = null;
-        scope = null;
-        collection = null;
-        cluster.close();
-        cluster = null;
+    public CouchbaseExecutor(CouchbaseConnectionManagedObject clusterConnection,
+                             CouchbaseDataAccessProviderConfiguration configuration) {
+        _clusterConnection = clusterConnection;
+        _cluster = clusterConnection.getCluster();
+        _accountCollection = clusterConnection.getScope().collection(ACCOUNT_COLLECTION_NAME);
+        _configuration = configuration;
     }
 
     /**
@@ -129,7 +74,7 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      * @return a list of maps representing the rows in the result
      */
     public List<Map<String, Object>> executeQuery(String query) {
-        final var result = cluster.query(query, QUERY_OPTIONS);
+        final var result = _cluster.query(query, QUERY_OPTIONS);
         return result.rowsAsObject()
                 .stream()
                 .map(JsonObject::toMap)
@@ -161,8 +106,8 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
     public AccountAttributes getByParameter(Parameters parameter, String value,
                                             AttributesEnumeration attributesEnumeration) {
         var result = executeQueryForSingleResult(
-                String.format(GET_BY_PARAMETER_QUERY, ACCOUNT_COLLECTION_NAME, configuration.getBucket(),
-                        configuration.getScope(), ACCOUNT_COLLECTION_NAME, getParameterName(parameter), value));
+                String.format(GET_BY_PARAMETER_QUERY, ACCOUNT_COLLECTION_NAME, _configuration.getBucket(),
+                        _configuration.getScope(), ACCOUNT_COLLECTION_NAME, getParameterName(parameter), value));
         ofNullable(attributesEnumeration)
                 .ifPresent(enumeration -> {
                     Set<String> attributesToReturn = enumeration.getAttributes();
@@ -185,7 +130,7 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      * @return The name of the parameter based on the configuration settings.
      */
     private String getParameterName(Parameters parameter) {
-        if (this.configuration.getUseScimParameterNames()) {
+        if (_configuration.getUseScimParameterNames()) {
             return parameter.getScimName();
         }
         return parameter.getName();
@@ -198,7 +143,7 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      * @param password the new password
      */
     public void updatePassword(String username, String password) {
-        executeQuery(String.format(UPDATE_PASSWORD_QUERY, configuration.getBucket(), configuration.getScope(),
+        executeQuery(String.format(UPDATE_PASSWORD_QUERY, _configuration.getBucket(), _configuration.getScope(),
                 ACCOUNT_COLLECTION_NAME, password, username));
     }
 
@@ -209,9 +154,9 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      * @return The created AccountAttributes object.
      */
     public AccountAttributes create(AccountAttributes accountAttributes) {
-        this.collection.upsert("node::user::personal_info::" + accountAttributes.getUserName(), accountAttributes.toMap());
+        _clusterConnection.getAccountCollection().upsert("node::user::personal_info::" + accountAttributes.getUserName(), accountAttributes.toMap());
         var createdEntity =
-                this.collection.get("node::user::personal_info::" + accountAttributes.getUserName())
+                _accountCollection.get("node::user::personal_info::" + accountAttributes.getUserName())
                         .contentAsObject().toMap();
         return AccountAttributes.fromMap(createdEntity);
     }
@@ -222,7 +167,7 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      * @param accountId the ID of the account to be deleted
      */
     public void delete(String accountId) {
-        this.collection.remove("node::user::personal_info::" + accountId);
+        _clusterConnection.getAccountCollection().remove("node::user::personal_info::" + accountId);
     }
 
     /**
@@ -235,8 +180,8 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      */
     public ResourceQueryResult findAllPageable(long offset, long limit) {
         var rawResult = executeQuery(
-                String.format(FIND_ALL_PAGEABLE_QUERY, ACCOUNT_COLLECTION_NAME, configuration.getBucket(),
-                        configuration.getScope(), ACCOUNT_COLLECTION_NAME, offset, limit));
+                String.format(FIND_ALL_PAGEABLE_QUERY, ACCOUNT_COLLECTION_NAME, _configuration.getBucket(),
+                        _configuration.getScope(), ACCOUNT_COLLECTION_NAME, offset, limit));
         var accountAttributes =
                 rawResult
                         .stream()
@@ -296,19 +241,19 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
                                      AttributesEnumeration attributesEnumeration) {
         var entityToUpdate =
                 executeQueryForSingleResult(
-                        String.format(FIND_ALL_QUERY, ACCOUNT_COLLECTION_NAME, configuration.getBucket(),
-                                configuration.getScope(), ACCOUNT_COLLECTION_NAME, username));
+                        String.format(FIND_ALL_QUERY, ACCOUNT_COLLECTION_NAME, _configuration.getBucket(),
+                                _configuration.getScope(), ACCOUNT_COLLECTION_NAME, username));
         entityToUpdate.entrySet()
                 .forEach(entry -> {
                     if (dataToUpdate.containsKey(entry.getKey())) {
                         entry.setValue(dataToUpdate.get(entry.getKey()));
                     }
                 });
-        this.collection.replace("node::user::personal_info::" + username, entityToUpdate);
+        _accountCollection.replace("node::user::personal_info::" + username, entityToUpdate);
         var attributesToReturn = attributesEnumeration.getAttributes();
         var updatedEntity = executeQueryForSingleResult(
-                String.format(FIND_ALL_QUERY, ACCOUNT_COLLECTION_NAME, configuration.getBucket(),
-                        configuration.getScope(), ACCOUNT_COLLECTION_NAME, username));
+                String.format(FIND_ALL_QUERY, ACCOUNT_COLLECTION_NAME, _configuration.getBucket(),
+                        _configuration.getScope(), ACCOUNT_COLLECTION_NAME, username));
         updatedEntity.keySet().retainAll(attributesToReturn);
         return AccountAttributes.fromMap(updatedEntity);
     }
@@ -322,12 +267,4 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
     private AccountAttributes wrapIntoAttributes(Map<String, Object> map) {
         return AccountAttributes.fromMap(map);
     }
-
-    public Collection getCollection() {
-        return collection;
-    }
-    public Scope getScope() {
-        return scope;
-    }
-
 }

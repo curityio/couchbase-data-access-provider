@@ -21,6 +21,7 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.UpsertOptions;
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.curity.identityserver.sdk.attribute.AccountAttributes;
@@ -46,14 +47,15 @@ class CouchbaseCredentialDataAccessProviderTest extends AbstractCouchbaseRunner{
 
     @BeforeAll
     public static void setup() throws InterruptedException {
-        CouchbaseExecutor ce = new CouchbaseExecutor(getConfiguration(null));
-        credentialDataAccessProvider =
-            new CouchbaseCredentialDataAccessProvider(ce);
+        var configuration = getConfiguration(null);
+        var clusterConnection = new CouchbaseConnectionManagedObject(configuration);
+        credentialDataAccessProvider = new CouchbaseCredentialDataAccessProvider(clusterConnection, configuration);
+
         Cluster c = Cluster.connect(couchbaseContainer.getConnectionString(), couchbaseContainer.getUsername(), couchbaseContainer.getPassword());
         c.waitUntilReady(Duration.ofSeconds(2));
 
         Bucket b = c.bucket(BUCKET_NAME);
-        Scope scope = b.scope(getConfiguration(null).getScope());
+        Scope scope = b.scope(configuration.getScope());
         Collection collection = scope.collection(CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME);
         String json = """
               {

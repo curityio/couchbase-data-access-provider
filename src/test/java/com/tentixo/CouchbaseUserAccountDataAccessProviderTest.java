@@ -21,6 +21,7 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.UpsertOptions;
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -57,12 +58,14 @@ class CouchbaseUserAccountDataAccessProviderTest  extends AbstractCouchbaseRunne
 
     private static CouchbaseUserAccountDataAccessProvider dataAccessProvider;
 
+
     @BeforeAll
     public static void setup() throws InterruptedException {
-        CouchbaseExecutor ce = new CouchbaseExecutor(getConfiguration(null));
-        dataAccessProvider =
-            new CouchbaseUserAccountDataAccessProvider(ce);
-        Cluster c = Cluster.connect(couchbaseContainer.getConnectionString(), couchbaseContainer.getUsername(), couchbaseContainer.getPassword());
+        var configuration = getConfiguration(null);
+        var clusterConnection = new CouchbaseConnectionManagedObject(configuration);
+        dataAccessProvider = new CouchbaseUserAccountDataAccessProvider(clusterConnection, configuration);
+        Cluster c = Cluster.connect(couchbaseContainer.getConnectionString(), couchbaseContainer.getUsername(),
+                couchbaseContainer.getPassword());
         c.waitUntilReady(Duration.ofSeconds(2));
 
         // Clear any created accounts

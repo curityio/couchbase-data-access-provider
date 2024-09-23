@@ -18,7 +18,7 @@ import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.MutateInSpec;
-import com.tentixo.CouchbaseExecutor;
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,14 +34,12 @@ import java.util.List;
 public final class CouchbaseNonceDataAccessProvider implements NonceDataAccessProvider {
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseNonceDataAccessProvider.class);
     public static final String NONCE_COLLECTION_NAME = "curity-nonces";
-    private final CouchbaseExecutor _couchbaseExecutor;
     private final Collection collection;
     private final CouchbaseDataAccessProviderConfiguration _configuration;
 
-    public CouchbaseNonceDataAccessProvider(CouchbaseDataAccessProviderConfiguration _configuration, CouchbaseExecutor couchbaseExecutor) {
-        this._configuration = _configuration;
-        this._couchbaseExecutor = couchbaseExecutor;
-        this.collection = couchbaseExecutor.getScope().collection(NONCE_COLLECTION_NAME);
+    public CouchbaseNonceDataAccessProvider(CouchbaseConnectionManagedObject clusterConnection, CouchbaseDataAccessProviderConfiguration configuration) {
+        this._configuration = configuration;
+        this.collection = clusterConnection.getScope().collection(NONCE_COLLECTION_NAME);
     }
     @Override
     public @Nullable String get(String nonce) {

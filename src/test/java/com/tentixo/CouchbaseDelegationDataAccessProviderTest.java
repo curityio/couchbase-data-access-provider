@@ -14,6 +14,7 @@
 
 package com.tentixo;
 
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import com.tentixo.token.CouchbaseDelegationDataAccessProvider;
 import org.junit.jupiter.api.Assertions;
@@ -31,11 +32,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.tentixo.token.CouchbaseDelegationDataAccessProvider.DELEGATION_COLLECTION_NAME;
+
 class CouchbaseDelegationDataAccessProviderTest extends AbstractCouchbaseRunner
 {
     private final CouchbaseDataAccessProviderConfiguration configuration = getConfiguration(null);
-    private final CouchbaseDelegationDataAccessProvider dap = new CouchbaseDelegationDataAccessProvider(configuration,
-            new CouchbaseExecutor(configuration));
+    private final CouchbaseConnectionManagedObject clusterConnection = new CouchbaseConnectionManagedObject(configuration);
+    private final CouchbaseDelegationDataAccessProvider dap = new CouchbaseDelegationDataAccessProvider(clusterConnection);
+
+    {
+    }
 
     @Test
     void create()
@@ -67,7 +73,8 @@ class CouchbaseDelegationDataAccessProviderTest extends AbstractCouchbaseRunner
         var delegation = new TestDelegation("johndoe", "my-client");
         dap.create(delegation);
         dap.setStatus(delegation.getId(), DelegationStatus.revoked);
-        Delegation d = dap.collection.get(delegation.getId()).contentAs(Delegation.class);
+        Delegation d = clusterConnection.getScope().collection(DELEGATION_COLLECTION_NAME)
+                .get(delegation.getId()).contentAs(Delegation.class);
         Assertions.assertEquals(DelegationStatus.revoked, d.getStatus());
         // Should return null because revoked
         var retrievedDelegation = dap.getById(delegation.getId());

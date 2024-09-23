@@ -14,6 +14,8 @@
 
 package com.tentixo;
 
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
+import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
@@ -31,8 +33,9 @@ public class CouchbaseCredentialDataAccessProvider implements CredentialDataAcce
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseCredentialDataAccessProvider.class);
     private final CouchbaseExecutor _couchbaseExecutor;
 
-    public CouchbaseCredentialDataAccessProvider(CouchbaseExecutor couchbaseExecutor) {
-        _couchbaseExecutor = couchbaseExecutor;
+    public CouchbaseCredentialDataAccessProvider(CouchbaseConnectionManagedObject clusterConnection,
+                                                 CouchbaseDataAccessProviderConfiguration configuration) {
+        _couchbaseExecutor = new CouchbaseExecutor(clusterConnection, configuration);
     }
 
     /**

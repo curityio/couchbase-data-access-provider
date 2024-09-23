@@ -14,6 +14,8 @@
 
 package com.tentixo;
 
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
+import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import com.tentixo.token.CouchbaseNonceDataAccessProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -23,9 +25,9 @@ import java.util.UUID;
 
 public final class CouchbaseNonceDataAccessProviderTest extends AbstractCouchbaseRunner
 {
+    private final CouchbaseDataAccessProviderConfiguration configuration = getConfiguration(null);
     private final CouchbaseNonceDataAccessProvider dap
-            = new CouchbaseNonceDataAccessProvider(getConfiguration(null),
-            new CouchbaseExecutor(getConfiguration(null)));
+            = new CouchbaseNonceDataAccessProvider(new CouchbaseConnectionManagedObject(configuration), configuration);
 
     @Test
     public void createNonce()

@@ -6,6 +6,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.couchbase.CouchbaseContainer;
 import org.testcontainers.couchbase.CouchbaseService;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import se.curity.identityserver.sdk.service.ExceptionFactory;
 
 import java.time.Duration;
 
@@ -92,6 +93,12 @@ public class AbstractCouchbaseRunner {
             @Override
             public Long getDevicesTtlRetainDuration() {
                 return 24l * 60 * 60;
+            }
+
+            @Override
+            public ExceptionFactory getExceptionFactory()
+            {
+                throw new RuntimeException("An exception was thrown");
             }
 
             @Override

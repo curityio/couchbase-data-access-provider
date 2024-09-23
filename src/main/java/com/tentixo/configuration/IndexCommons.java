@@ -34,7 +34,11 @@ public class IndexCommons {
     }
 
     private static void waitInner(Duration timeout, Runnable runnable) {
-        Mono.fromRunnable(runnable).retryWhen(Retry.onlyIf(ctx -> hasCause(ctx.exception(), IndexesNotReadyException.class)).exponentialBackoff(Duration.ofMillis(50), Duration.ofSeconds(3)).timeout(timeout).toReactorRetry()).onErrorMap(t -> t instanceof RetryExhaustedException ? toWatchTimeoutException(t, timeout) : t).block();
+        Mono.fromRunnable(runnable)
+                .retryWhen(Retry.onlyIf(ctx -> hasCause(ctx.exception(), IndexesNotReadyException.class))
+                        .exponentialBackoff(Duration.ofMillis(50), Duration.ofSeconds(3))
+                        .timeout(timeout).toReactorRetry())
+                .onErrorMap(t -> t instanceof RetryExhaustedException ? toWatchTimeoutException(t, timeout) : t).block();
     }
 
     private static TimeoutException toWatchTimeoutException(Throwable t, Duration timeout) {

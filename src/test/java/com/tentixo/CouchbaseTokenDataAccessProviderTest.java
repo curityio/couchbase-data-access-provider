@@ -14,6 +14,7 @@
 
 package com.tentixo;
 
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import com.tentixo.token.CouchbaseTokenDataAccessProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ public final class CouchbaseTokenDataAccessProviderTest extends AbstractCouchbas
 {
 
     private final CouchbaseTokenDataAccessProvider dap
-            = new CouchbaseTokenDataAccessProvider(new CouchbaseExecutor(getConfiguration(null)));
+            = new CouchbaseTokenDataAccessProvider(new CouchbaseConnectionManagedObject(getConfiguration(null)));
 
     @Test
     public void insertToken()

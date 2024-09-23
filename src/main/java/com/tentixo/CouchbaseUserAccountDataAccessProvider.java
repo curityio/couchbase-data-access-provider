@@ -14,6 +14,8 @@
 
 package com.tentixo;
 
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
+import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.curity.identityserver.sdk.Nullable;
@@ -37,8 +39,9 @@ public class CouchbaseUserAccountDataAccessProvider implements UserAccountDataAc
     public static final String ACCOUNT_COLLECTION_NAME = "curity-accounts";
     private final CouchbaseExecutor _couchbaseExecutor;
 
-    public CouchbaseUserAccountDataAccessProvider(CouchbaseExecutor couchbaseExecutor) {
-        _couchbaseExecutor = couchbaseExecutor;
+    public CouchbaseUserAccountDataAccessProvider(CouchbaseConnectionManagedObject clusterConnection,
+                                                  CouchbaseDataAccessProviderConfiguration configuration) {
+        _couchbaseExecutor = new CouchbaseExecutor(clusterConnection, configuration);
     }
 
     /**

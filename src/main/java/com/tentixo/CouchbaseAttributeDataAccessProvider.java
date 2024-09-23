@@ -14,6 +14,7 @@
 
 package com.tentixo;
 
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import se.curity.identityserver.sdk.attribute.AttributeTableView;
 import se.curity.identityserver.sdk.attribute.Attributes;
@@ -34,10 +35,10 @@ public class CouchbaseAttributeDataAccessProvider implements AttributeDataAccess
     private static final String SCOPE_MARK = ":scope";
     private static final String COLLECTION_MARK = ":collection";
 
-    public CouchbaseAttributeDataAccessProvider(CouchbaseDataAccessProviderConfiguration configuration,
-                                                CouchbaseExecutor couchbaseExecutor) {
+    public CouchbaseAttributeDataAccessProvider(CouchbaseConnectionManagedObject clusterConnection,
+                                                CouchbaseDataAccessProviderConfiguration configuration) {
         _configuration = configuration;
-        _couchbaseExecutor = couchbaseExecutor;
+        _couchbaseExecutor = new CouchbaseExecutor(clusterConnection, configuration);
     }
 
     /**

@@ -15,6 +15,7 @@
 package com.tentixo.descriptor;
 
 import com.tentixo.*;
+import com.tentixo.configuration.CouchbaseConnectionManagedObject;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import com.tentixo.token.CouchbaseDelegationDataAccessProvider;
 import com.tentixo.token.CouchbaseNonceDataAccessProvider;
@@ -113,6 +114,6 @@ public class CouchbaseDataAccessProviderDescriptor
     @Override
     public Optional<? extends ManagedObject<CouchbaseDataAccessProviderConfiguration>> createManagedObject(
             CouchbaseDataAccessProviderConfiguration configuration) {
-        return Optional.of(new CouchbaseExecutor(configuration));
+        return Optional.of(new CouchbaseConnectionManagedObject(configuration));
     }
 }

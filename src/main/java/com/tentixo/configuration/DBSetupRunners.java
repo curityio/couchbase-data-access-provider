@@ -16,8 +16,8 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static com.couchbase.client.core.util.CbThrowables.findCause;
 import static com.couchbase.client.core.util.CbThrowables.hasCause;
@@ -29,7 +29,7 @@ import static com.tentixo.token.CouchbaseNonceDataAccessProvider.NONCE_COLLECTIO
 import static com.tentixo.token.CouchbaseTokenDataAccessProvider.TOKEN_COLLECTION_NAME;
 
 
-public class DBSetupRunners  {
+public class DBSetupRunners {
 
     private static final Logger logger = LoggerFactory.getLogger(DBSetupRunners.class);
 
@@ -37,6 +37,13 @@ public class DBSetupRunners  {
             .watchQueryIndexesOptions()
             .watchPrimary(true);
     private static final String DEFAULT_INDEX_NAME = "#primary";
+    private static final List<String> collections = List.of(BUCKET_COLLECTION_NAME,
+            SESSION_COLLECTION_NAME,
+            ACCOUNT_COLLECTION_NAME,
+            DELEGATION_COLLECTION_NAME,
+            NONCE_COLLECTION_NAME,
+            TOKEN_COLLECTION_NAME);
+
     private CreatePrimaryQueryIndexOptions options;
 
 
@@ -45,19 +52,20 @@ public class DBSetupRunners  {
         String defaultScope = scope.name();
         try {
             cluster.queryIndexes().createPrimaryIndex(defaultBucket);
-            logger.info("Created primary index" + defaultBucket);
+            logger.info("Created primary index {}", defaultBucket);
         } catch (Exception e) {
-            logger.info("Primary index already exists on bucket " + defaultBucket);
+            logger.debug("Primary index already exists on bucket {}", defaultBucket);
         }
 
-        var collections = Arrays.asList(BUCKET_COLLECTION_NAME, SESSION_COLLECTION_NAME, ACCOUNT_COLLECTION_NAME, DELEGATION_COLLECTION_NAME, NONCE_COLLECTION_NAME, TOKEN_COLLECTION_NAME);
 
-        collections.stream().forEach(col -> createCollection(bucket, defaultScope, col));
-        collections.stream().forEach(col -> setupPrimaryIndex(cluster, defaultBucket, defaultScope, col));
+        collections.forEach(col -> createCollection(bucket, defaultScope, col));
+        collections.forEach(col -> setupPrimaryIndex(cluster, defaultBucket, defaultScope, col));
+        IndexCommons.waitUntilReady(cluster, bucket.name(), Duration.ofSeconds(60));
     }
 
     private void setupPrimaryIndex(Cluster cluster, String bucketName, String scope, String collectionName) {
 
+        logger.debug("Trying create index");
         Mono.fromRunnable(() -> createIndex(cluster, bucketName, scope, collectionName))
                 .retryWhen(Retry.onlyIf(ctx ->
                                 findCause(ctx.exception(), InternalServerFailureException.class)
@@ -69,13 +77,16 @@ public class DBSetupRunners  {
                         .timeout(Duration.ofSeconds(60))
                         .toReactorRetry())
                 .block();
+        logger.debug("Waiting fot indexes to be available");
         Mono.fromRunnable(() -> waitForIndex(cluster, bucketName, scope, collectionName))
                 .retryWhen(Retry.onlyIf(ctx -> hasCause(ctx.exception(), IndexNotFoundException.class))
                         .exponentialBackoff(Duration.ofMillis(50), Duration.ofSeconds(3))
                         .timeout(Duration.ofSeconds(30))
                         .toReactorRetry())
                 .block();
+        logger.debug("Wait for index block ended");
         IndexCommons.waitUntilReady(cluster, bucketName, Duration.ofSeconds(60));
+        logger.debug("Waited until ready");
     }
 
     private void createCollection(Bucket bucket, String scope, String collectionName) {
@@ -83,15 +94,16 @@ public class DBSetupRunners  {
         try {
             CollectionSpec spec = CollectionSpec.create(collectionName, scope);
             collectionManager.createCollection(spec);
-            logger.info("Created collection '" + spec.name() + "' in scope '" + spec.scopeName() + "' of bucket '" + bucket.name() + "'");
+            logger.info("Created collection '{}' in scope '{}' of bucket '{}'", spec.name(), spec.scopeName(), bucket.name());
         } catch (CollectionExistsException e) {
-            logger.info(String.format("Collection <%s> already exists", collectionName));
+            logger.debug("Collection <{}> already exists", collectionName);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     private void createIndex(Cluster cluster, String bucketName, String scope, String collection) {
+        logger.debug("Trying to create index for bucket={}, scope={}, collection={}", bucketName, scope, collection);
         var options = CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions()
                 .ignoreIfExists(true)
                 .numReplicas(0);
@@ -103,6 +115,7 @@ public class DBSetupRunners  {
     }
 
     private void waitForIndex(Cluster cluster, String bucketName, String scope, String collection) {
+        logger.debug("Waiting for index for bucket={}, scope={}, collection={}", bucketName, scope, collection);
         if (collection != null && scope != null) {
             WATCH_PRIMARY.collectionName(collection).scopeName(scope);
         }

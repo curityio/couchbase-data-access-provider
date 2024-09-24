@@ -25,7 +25,6 @@ public final class StringOrArrayAdapter implements StringOrArray {
 
     @JsonCreator
     public static StringOrArrayAdapter of(Object values) {
-        System.out.println("of Object");
         if (values instanceof Collection<?>) {
             return of(values);
         } else if (values instanceof String) {
@@ -36,20 +35,17 @@ public final class StringOrArrayAdapter implements StringOrArray {
 
     @JsonCreator
     public static StringOrArrayAdapter of(Collection<String> values) {
-        System.out.println("of Collection");
         return new StringOrArrayAdapter(DefaultStringOrArray.of(values));
     }
 
     @JsonCreator
     public static StringOrArrayAdapter of(@Nullable String value) {
-        System.out.println("of String");
         return new StringOrArrayAdapter(DefaultStringOrArray.of(value));
     }
 
     @JsonIgnore
     @Override
     public @Nullable String getValueOrError() throws NoSingleValueException {
-        System.out.println("getValueOrError");
         return _delegate.getValueOrError();
     }
 
@@ -61,13 +57,11 @@ public final class StringOrArrayAdapter implements StringOrArray {
 
     @JsonProperty("values")
     public List<String> getValues() {
-        System.out.println("getValues");
         return _delegate.getValues();
     }
 
     @Override
     public @Nullable Object toStringOrArray() {
-        System.out.println("toStringOrArray");
         return _delegate.toStringOrArray();
     }
 
@@ -76,7 +70,6 @@ public final class StringOrArrayAdapter implements StringOrArray {
     }
 
     public String toString() {
-        System.out.println("toString");
         return _delegate.toString();
     }
 

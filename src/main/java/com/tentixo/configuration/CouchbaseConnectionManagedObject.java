@@ -19,9 +19,9 @@ import com.couchbase.client.java.*;
 import com.tentixo.CurityJsonSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.curity.identityserver.sdk.Nullable;
 import se.curity.identityserver.sdk.plugin.ManagedObject;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.tentixo.CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME;
@@ -30,9 +30,6 @@ public final class CouchbaseConnectionManagedObject extends ManagedObject<Couchb
     private static final Logger _logger = LoggerFactory.getLogger(CouchbaseConnectionManagedObject.class);
     private final CouchbaseDataAccessProviderConfiguration _configuration;
     private final AtomicReference<Cluster> _cluster;
-
-
-    private @Nullable Scope _scope;
 
     public CouchbaseConnectionManagedObject(CouchbaseDataAccessProviderConfiguration configuration) {
         super(configuration);
@@ -49,7 +46,7 @@ public final class CouchbaseConnectionManagedObject extends ManagedObject<Couchb
         if (_cluster.get() == null) {
             synchronized (_cluster) {
                 if (_cluster.get() == null) {
-                   _cluster.set(initCluster(_configuration));
+                    initCluster(_configuration);
                 }
             }
         }
@@ -69,7 +66,7 @@ public final class CouchbaseConnectionManagedObject extends ManagedObject<Couchb
      *
      * @param configuration The configuration object containing the necessary information for initialization.
      */
-    private Cluster initCluster(CouchbaseDataAccessProviderConfiguration configuration) {
+    private void initCluster(CouchbaseDataAccessProviderConfiguration configuration) {
         try {
             var connectionString = configuration.getConnectionString();
             var username = configuration.getUserName();
@@ -92,14 +89,22 @@ public final class CouchbaseConnectionManagedObject extends ManagedObject<Couchb
                 bucket.collections().createScope(configuration.getScope());
                 scope = bucket.scope(configuration.getScope());
             }
+
+            // TODO: This should not run in runtime, very slow
             DBSetupRunners setupRunners = new DBSetupRunners();
             setupRunners.run(cluster, bucket, scope);
 
-            return cluster;
+            _cluster.set(cluster);
         } catch (CouchbaseException e) {
             _logger.error("Init error! {}", e.getMessage());
             _cluster.getAndSet(null).close();
             throw _configuration.getExceptionFactory().serviceUnavailable();
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        _cluster.get().close();
+        _cluster.set(null);
     }
 }

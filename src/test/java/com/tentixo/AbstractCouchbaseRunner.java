@@ -1,26 +1,19 @@
 package com.tentixo;
 
-import com.google.gson.Gson;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import com.tentixo.testcontainers.CouchbaseContainerMetadata;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.couchbase.CouchbaseContainer;
 import org.testcontainers.couchbase.CouchbaseService;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import se.curity.identityserver.sdk.attribute.Attributes;
-import se.curity.identityserver.sdk.service.Json;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
 
 import static com.tentixo.testcontainers.CouchbaseContainerMetadata.COUCHBASE_IMAGE_ENTERPRISE;
 import static com.tentixo.testcontainers.CouchbaseContainerMetadata.bucketDefinition;
 
 @Testcontainers
 public class AbstractCouchbaseRunner {
-    @Container
     final static CouchbaseContainer couchbaseContainer;
 
     static {

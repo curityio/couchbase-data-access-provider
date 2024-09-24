@@ -1,23 +1,17 @@
 package com.tentixo;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.tentixo.token.DelegationAdapter;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import se.curity.identityserver.sdk.attribute.Attributes;
-import se.curity.identityserver.sdk.attribute.AuthenticationAttributes;
-import se.curity.identityserver.sdk.data.StringOrArray;
-import se.curity.identityserver.sdk.data.authorization.Delegation;
 import se.curity.identityserver.sdk.data.authorization.Token;
+import se.curity.identityserver.sdk.data.authorization.TokenStatus;
 import se.curity.identityserver.sdk.errors.NoSingleValueException;
 
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.UUID;
 
 
 public class TokenSerializationTest {
@@ -28,8 +22,7 @@ public class TokenSerializationTest {
           "audience": {
             "values": [
               "oauth-tools"
-            ],
-            "valueOrError": "oauth-tools"
+            ]
           },
           "scope": "read",
           "tokenHash": "WENjVWTPb40BxqafX5x7XDA4l5FwmyA+fRN3eKGFpMZs5y4vASDlbT3JtRm2CH/mNKC4bGUwsVzG2rffDLYgIQ==",
@@ -134,55 +127,44 @@ public class TokenSerializationTest {
         }""";
 
     @Test
-    public void testTokenSerialization() throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        final var simpleModule = new SimpleModule()
-            .addSerializer(Supplier.class, new com.fasterxml.jackson.databind.JsonSerializer<Supplier>() {
+    public void testTokenSerialization() throws NoSingleValueException
+    {
+        var serializer = CurityJsonSerializer.create();
+        var t = serializer.deserialize(Token.class, tokenSample.getBytes(StandardCharsets.UTF_8));
+        Assertions.assertEquals(t.getAudience().getValueOrError(), "oauth-tools");
+    }
 
-                @Override
-                public void serialize(Supplier value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-                    Object o = value.get();
-                    if (o instanceof NoSingleValueException) {
-                        gen.writeString("NoSingleValeError");
-                    }
-                }
-            })
-            .addDeserializer(Supplier.class, new JsonDeserializer<Supplier>() {
-                @Override
-                public Supplier deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
-                    return new Supplier() {
-                        @Override
-                        public Object get() {
-                            try {
-                                return p.getValueAsString();
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                    };
-                }
-            })
-            .addSerializer(AuthenticationAttributes.class, new com.fasterxml.jackson.databind.JsonSerializer<AuthenticationAttributes>() {
-                @Override
-                public void serialize(AuthenticationAttributes value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-                    Map<String, Object> m = value.toMap();
-                    gen.writeObject(m);
-                }
-            })
-            .addDeserializer(AuthenticationAttributes.class, new JsonDeserializer<AuthenticationAttributes>(){
+    @Test
+    public void testSerializerRoundtrip()
+    {
+        var serializer = CurityJsonSerializer.create();
+        var id = UUID.randomUUID();
+        var token = new TokenAdapter(id.toString(), String.valueOf(id.hashCode()), "qwe-123", "purpose","usage","format","openid",
+                Instant.now().getEpochSecond(), Instant.now().plus(Duration.ofSeconds(10L)).getEpochSecond(),
+                TokenStatus.issued, "secure-idp", "johndoe", StringOrArrayAdapter.of("tests"),
+                Instant.now().getEpochSecond(), Map.of("foo", "bar"));
 
-                @Override
-                public AuthenticationAttributes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
-                    Map<String, Object> m = p.readValueAs(Map.class);
-                    return AuthenticationAttributes.fromAttributes( Attributes.fromMap(m));
-                }
-            })
-            .addAbstractTypeMapping(Token.class, TokenAdapter.class)
-            .addAbstractTypeMapping(Delegation.class, DelegationAdapter.class)
-            .addAbstractTypeMapping(StringOrArray.class, StringOrArrayAdapter.class);
-        mapper.registerModule(simpleModule);
-        Token t = mapper.readValue(tokenSample, Token.class);
+        var serialized = serializer.serialize(token);
+        var deserialized = serializer.deserialize(Token.class, serialized);
+
+        Assertions.assertEquals(token.getId(), deserialized.getId());
+        Assertions.assertEquals(token.getAudience(), deserialized.getAudience());
+    }
+
+    @Test
+    public void testStringAdapterSerialization() throws NoSingleValueException
+    {
+        var serializer = CurityJsonSerializer.create();
+        StringOrArrayAdapter stringOrArray = serializer.deserialize(StringOrArrayAdapter.class, "{ \"values\": [\"oauth-tools\", \"other-value\"] }".getBytes(StandardCharsets.UTF_8));
+        Assertions.assertEquals(stringOrArray.getValues(), List.of("oauth-tools", "other-value"));
+        Assertions.assertThrows(NoSingleValueException.class, stringOrArray::getValueOrError);
+
+        stringOrArray = serializer.deserialize(StringOrArrayAdapter.class, "\"oauth-tools\"".getBytes(StandardCharsets.UTF_8));
+        Assertions.assertEquals(stringOrArray.getValueOrError(), "oauth-tools");
+        Assertions.assertEquals(stringOrArray.getValues(), List.of("oauth-tools"));
+
+        stringOrArray = serializer.deserialize(StringOrArrayAdapter.class, "{ \"values\": [\"oauth-tools\"] }".getBytes(StandardCharsets.UTF_8));
+        Assertions.assertEquals(stringOrArray.getValueOrError(), "oauth-tools");
 
     }
 }

@@ -65,6 +65,10 @@ class CouchbaseUserAccountDataAccessProviderTest  extends AbstractCouchbaseRunne
         Cluster c = Cluster.connect(couchbaseContainer.getConnectionString(), couchbaseContainer.getUsername(), couchbaseContainer.getPassword());
         c.waitUntilReady(Duration.ofSeconds(2));
 
+        // Clear any created accounts
+        var resources = ce.findAllPageable(0, 100).getResources();
+        resources.forEach(resource -> ce.delete(resource.getId()));
+
         Bucket b = c.bucket(BUCKET_NAME);
         Scope scope = b.scope(getConfiguration(null).getScope());
         Collection collection = scope.collection(CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME);

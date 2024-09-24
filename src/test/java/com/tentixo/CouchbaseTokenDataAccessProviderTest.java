@@ -21,7 +21,6 @@ import se.curity.identityserver.sdk.data.authorization.TokenStatus;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,7 +36,7 @@ public final class CouchbaseTokenDataAccessProviderTest extends AbstractCouchbas
         var id = UUID.randomUUID();
         var token = new TokenAdapter(id.toString(), String.valueOf(id.hashCode()), "qwe-123", "purpose","usage","format", "openid",
                 Instant.now().getEpochSecond(), Instant.now().plus(Duration.ofSeconds(10L)).getEpochSecond(),
-                TokenStatus.issued, "secure-idp", "johndoe", new StringOrArrayAdapter("tests"),
+                TokenStatus.issued, "secure-idp", "johndoe", StringOrArrayAdapter.of("tests"),
                 Instant.now().getEpochSecond(), Map.of("foo", "bar"));
 
         dap.create(token);
@@ -49,7 +48,7 @@ public final class CouchbaseTokenDataAccessProviderTest extends AbstractCouchbas
         var id = UUID.randomUUID();
         var token = new TokenAdapter(String.valueOf(id.hashCode()), id.toString(), "qwe-123", "purpose","usage","format","openid",
                 Instant.now().getEpochSecond(), Instant.now().plus(Duration.ofSeconds(10L)).getEpochSecond(),
-                TokenStatus.issued, "secure-idp", "johndoe", new StringOrArrayAdapter("tests"),
+                TokenStatus.issued, "secure-idp", "johndoe", StringOrArrayAdapter.of("tests"),
                 Instant.now().getEpochSecond(), Map.of("foo", "bar"));
         dap.create(token);
         var retrievedToken = dap.getByHash(token.getTokenHash());
@@ -70,7 +69,7 @@ public final class CouchbaseTokenDataAccessProviderTest extends AbstractCouchbas
         var id = UUID.randomUUID();
         var token = new TokenAdapter(id.toString(), String.valueOf(id.hashCode()), "qwe-123", "purpose","usage","format","openid",
                 Instant.now().getEpochSecond(), Instant.now().plus(Duration.ofSeconds(10L)).getEpochSecond(),
-                TokenStatus.issued, "secure-idp", "johndoe", new StringOrArrayAdapter("tests"),
+                TokenStatus.issued, "secure-idp", "johndoe", StringOrArrayAdapter.of("tests"),
                 Instant.now().getEpochSecond(), Map.of("foo", "bar"));
         dap.create(token);
         dap.setStatusByTokenHash(token.getTokenHash(), TokenStatus.revoked);

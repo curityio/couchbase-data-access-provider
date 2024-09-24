@@ -27,10 +27,13 @@ public interface CouchbaseDataAccessProviderConfiguration extends Configuration 
     // It's possible to add validations on configured values
     // See https://curity.io/docs/idsvr-java-plugin-sdk/latest/se/curity/identityserver/sdk/config/annotation/package-summary.html
     // For available annotations
+    @Description("Couchbase instance's host")
+    @Suggestions("localhost")
+    String getHost();
 
-    @Description("The connection string to use with the couchbase cluster")
-    @Suggestions({"couchbases://localhost", "couchbase://localhost"})
-    String getConnectionString();
+    @Description("Use TLS to connect to the host")
+    @DefaultBoolean(true)
+    boolean useTls();
 
     @Description("Username to connect to a Couchbase instance")
     @Suggestions("Administrator")

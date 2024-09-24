@@ -68,12 +68,15 @@ class CouchbaseUserAccountDataAccessProviderTest  extends AbstractCouchbaseRunne
                 couchbaseContainer.getPassword());
         c.waitUntilReady(Duration.ofSeconds(2));
 
-        // Clear any created accounts
-        var resources = ce.findAllPageable(0, 100).getResources();
-        resources.forEach(resource -> ce.delete(resource.getId()));
 
         Bucket b = c.bucket(BUCKET_NAME);
-        Scope scope = b.scope(getConfiguration(null).getScope());
+        Scope scope = b.scope(configuration.getScope());
+
+        // Clear any created accounts
+        var deleteAllQuery = "DELETE FROM `%s`".formatted(CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME);
+        scope.query(deleteAllQuery);
+
+        // Add test account
         Collection collection = scope.collection(CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME);
         String json = """
              {

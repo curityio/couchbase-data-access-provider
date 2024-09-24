@@ -77,16 +77,14 @@ public class DBSetupRunners {
                         .timeout(Duration.ofSeconds(60))
                         .toReactorRetry())
                 .block();
-        logger.debug("Waiting fot indexes to be available");
         Mono.fromRunnable(() -> waitForIndex(cluster, bucketName, scope, collectionName))
                 .retryWhen(Retry.onlyIf(ctx -> hasCause(ctx.exception(), IndexNotFoundException.class))
                         .exponentialBackoff(Duration.ofMillis(50), Duration.ofSeconds(3))
                         .timeout(Duration.ofSeconds(30))
                         .toReactorRetry())
                 .block();
-        logger.debug("Wait for index block ended");
         IndexCommons.waitUntilReady(cluster, bucketName, Duration.ofSeconds(60));
-        logger.debug("Waited until ready");
+        logger.debug("Indexes are now ready");
     }
 
     private void createCollection(Bucket bucket, String scope, String collectionName) {
@@ -110,8 +108,7 @@ public class DBSetupRunners {
         if (collection != null && scope != null) {
             options.collectionName(collection).scopeName(scope);
         }
-        cluster.queryIndexes().createPrimaryIndex(bucketName,
-                options);
+        cluster.queryIndexes().createPrimaryIndex(bucketName, options);
     }
 
     private void waitForIndex(Cluster cluster, String bucketName, String scope, String collection) {
@@ -121,5 +118,6 @@ public class DBSetupRunners {
         }
         cluster.queryIndexes().watchIndexes(bucketName, Collections.singletonList(DEFAULT_INDEX_NAME),
                 Duration.ofSeconds(10), WATCH_PRIMARY);
+        logger.debug("Index for bucket={}, scope={}, collection={} is ready", bucketName, scope, collection);
     }
 }

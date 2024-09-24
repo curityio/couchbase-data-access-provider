@@ -45,7 +45,7 @@ public final class CouchbaseTokenDataAccessProvider implements TokenDataAccessPr
         try {
             return collection.get(tokenHash).contentAs(Token.class);
         } catch (DocumentNotFoundException de) {
-            _logger.debug("Document not found: " + tokenHash);
+            _logger.debug("Could not get token by hash: {}", de.getMessage());
             return null;
         }
     }
@@ -63,7 +63,7 @@ public final class CouchbaseTokenDataAccessProvider implements TokenDataAccessPr
         try {
             token = collection.get(tokenHash).contentAs(Token.class);
         } catch (DocumentNotFoundException de) {
-            _logger.debug("Document not found: " + tokenHash);
+            _logger.debug("Could not get status of token: {}", de.getMessage());
             return null;
         }
         return token.getStatus().toString();

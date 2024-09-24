@@ -15,7 +15,6 @@
 package com.tentixo;
 
 import com.tentixo.configuration.CouchbaseConnectionManagedObject;
-import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import com.tentixo.token.CouchbaseDelegationDataAccessProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -36,12 +35,10 @@ import static com.tentixo.token.CouchbaseDelegationDataAccessProvider.DELEGATION
 
 class CouchbaseDelegationDataAccessProviderTest extends AbstractCouchbaseRunner
 {
-    private final CouchbaseDataAccessProviderConfiguration configuration = getConfiguration(null);
-    private final CouchbaseConnectionManagedObject clusterConnection = new CouchbaseConnectionManagedObject(configuration);
-    private final CouchbaseDelegationDataAccessProvider dap = new CouchbaseDelegationDataAccessProvider(clusterConnection);
-
-    {
-    }
+    private final CouchbaseConnectionManagedObject clusterConnection =
+            new CouchbaseConnectionManagedObject(getConfiguration(null));
+    private final CouchbaseDelegationDataAccessProvider dap =
+            new CouchbaseDelegationDataAccessProvider(clusterConnection);
 
     @Test
     void create()
@@ -56,6 +53,7 @@ class CouchbaseDelegationDataAccessProviderTest extends AbstractCouchbaseRunner
         var delegation = new TestDelegation("johndoe", "my-client");
         dap.create(delegation);
         var retrievedDelegation = dap.getById(delegation.getId());
+        Assertions.assertNotNull(retrievedDelegation);
         Assertions.assertEquals(delegation.getId(), retrievedDelegation.getId());
         Assertions.assertEquals(delegation.getClientId(), retrievedDelegation.getClientId());
         Assertions.assertEquals(delegation.getOwner(), retrievedDelegation.getOwner());
@@ -82,12 +80,6 @@ class CouchbaseDelegationDataAccessProviderTest extends AbstractCouchbaseRunner
     }
 
     @Test
-    void getByAuthorizationCodeHash()
-    {
-
-    }
-
-    @Test
     void getByOwner()
     {
         var randomUser = UUID.randomUUID().toString();
@@ -96,26 +88,6 @@ class CouchbaseDelegationDataAccessProviderTest extends AbstractCouchbaseRunner
         dap.create(new TestDelegation(randomUser, "my-client"));
         var listOfDelegations = dap.getByOwner(randomUser, 0, 50);
         Assertions.assertEquals(3, listOfDelegations.size());
-    }
-
-    @Test
-    void getAllActive()
-    {
-    }
-
-    @Test
-    void getCountAllActive()
-    {
-    }
-
-    @Test
-    void getCountByOwner()
-    {
-    }
-
-    @Test
-    void getAll()
-    {
     }
 
     static class TestDelegation implements Delegation
@@ -190,7 +162,6 @@ class CouchbaseDelegationDataAccessProviderTest extends AbstractCouchbaseRunner
         @Override
         public AuthenticationAttributes getAuthenticationAttributes()
         {
-
             return AuthenticationAttributes.of(_subject, ContextAttributes.empty());
         }
 

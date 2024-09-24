@@ -67,21 +67,21 @@ public final class CouchbaseConnectionManagedObject extends ManagedObject<Couchb
      * @param configuration The configuration object containing the necessary information for initialization.
      */
     private void initCluster(CouchbaseDataAccessProviderConfiguration configuration) {
+        _logger.debug("Setting up the cluster connection");
+        var host = configuration.getHost();
+        var connectionString = "couchbase%s://%s".formatted(configuration.useTls() ? "s" : "", host);
+        var username = configuration.getUserName();
+        var password = configuration.getPassword();
+
+        ClusterOptions options = ClusterOptions.clusterOptions(username, password)
+                .environment(env -> env.jsonSerializer(CurityJsonSerializer.create()));
+
+        Cluster cluster = null;
         try {
-            var connectionString = configuration.getConnectionString();
-            var username = configuration.getUserName();
-            var password = configuration.getPassword();
-
-            ClusterOptions options = ClusterOptions.clusterOptions(username, password)
-                    .environment(env -> env
-                            .jsonSerializer(CurityJsonSerializer.create())
-
-                    );
-            var cluster = Cluster.connect(connectionString, options);
-
+            cluster = Cluster.connect(connectionString, options);
             Bucket bucket = cluster.bucket(configuration.getBucket());
             if (bucket == null) {
-                throw _configuration.getExceptionFactory()
+                throw configuration.getExceptionFactory()
                         .configurationException("Given bucket does not exist: " + configuration.getBucket());
             }
             var scope = bucket.scope(configuration.getScope());
@@ -90,21 +90,27 @@ public final class CouchbaseConnectionManagedObject extends ManagedObject<Couchb
                 scope = bucket.scope(configuration.getScope());
             }
 
-            // TODO: This should not run in runtime, very slow
+            // TODO: This should not run in runtime. Very slow
+            // Create a script to setup the collections/indexes and document it as a prerequisite to using the plugin
             DBSetupRunners setupRunners = new DBSetupRunners();
             setupRunners.run(cluster, bucket, scope);
 
             _cluster.set(cluster);
         } catch (CouchbaseException e) {
             _logger.error("Init error! {}", e.getMessage());
-            _cluster.getAndSet(null).close();
-            throw _configuration.getExceptionFactory().serviceUnavailable();
+            if (cluster != null) {
+                cluster.close();
+            }
+            throw configuration.getExceptionFactory().serviceUnavailable();
         }
     }
 
     @Override
     public void close() throws IOException {
-        _cluster.get().close();
-        _cluster.set(null);
+        Cluster cluster = _cluster.get();
+        if (cluster != null) {
+            cluster.close();
+            _cluster.set(null);
+        }
     }
 }

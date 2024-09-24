@@ -16,13 +16,10 @@ package com.tentixo;
 
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.Scope;
-import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.*;
 import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.manager.collection.CollectionSpec;
 import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
 import com.tentixo.configuration.DBSetupRunners;
 import org.slf4j.Logger;
@@ -33,18 +30,12 @@ import se.curity.identityserver.sdk.data.query.ResourceQuery.AttributesEnumerati
 import se.curity.identityserver.sdk.data.query.ResourceQueryResult;
 import se.curity.identityserver.sdk.plugin.ManagedObject;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.tentixo.CouchbaseBucketDataAccessProvider.BUCKET_COLLECTION_NAME;
-import static com.tentixo.CouchbaseSessionDataAccessProvider.SESSION_COLLECTION_NAME;
 import static com.tentixo.CouchbaseUserAccountDataAccessProvider.ACCOUNT_COLLECTION_NAME;
-import static com.tentixo.token.CouchbaseDelegationDataAccessProvider.DELEGATION_COLLECTION_NAME;
-import static com.tentixo.token.CouchbaseNonceDataAccessProvider.NONCE_COLLECTION_NAME;
-import static com.tentixo.token.CouchbaseTokenDataAccessProvider.TOKEN_COLLECTION_NAME;
 import static java.util.Optional.ofNullable;
 
 public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProviderConfiguration> {
@@ -69,6 +60,8 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
     private final String FIND_ALL_QUERY = "SELECT `%s`.* FROM `%s`.%s.`%s`" +
                                           " WHERE META().id = \"node::user::personal_info::%s\"";
 
+    public static final QueryOptions QUERY_OPTIONS = QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS);
+
     public CouchbaseExecutor(CouchbaseDataAccessProviderConfiguration configuration) {
         super(configuration);
         init(configuration);
@@ -86,7 +79,15 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
             var connectionString = configuration.useTls() ? "couchbases://" + bucketHost : "couchbase://" + bucketHost;
             var username = configuration.getUserName();
             var password = configuration.getPassword();
-            this.cluster = Cluster.connect(connectionString, username, password);
+
+            ClusterOptions options = ClusterOptions.clusterOptions(username, password)
+                    .environment(env -> env
+                           .jsonSerializer(CurityJsonSerializer.create())
+
+                    );
+            this.cluster = Cluster.connect(connectionString,options);
+
+
             this.bucket = cluster.bucket(configuration.getBucket());
             if (bucket == null) {
                 throw new RuntimeException("Given bucket does not exist: " + configuration.getBucket());
@@ -99,6 +100,9 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
             DBSetupRunners setupRunners = new DBSetupRunners();
             setupRunners.run(cluster, bucket, scope);
             this.collection = scope.collection(ACCOUNT_COLLECTION_NAME);
+
+
+
         } catch (CouchbaseException e) {
             _logger.error("Init error! {}", e.getMessage());
             throw new RuntimeException(e);
@@ -110,7 +114,11 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      */
     @Override
     public void close() {
-        cluster.disconnect();
+        bucket = null;
+        scope = null;
+        collection = null;
+        cluster.close();
+        cluster = null;
     }
 
     /**
@@ -121,7 +129,7 @@ public class CouchbaseExecutor extends ManagedObject<CouchbaseDataAccessProvider
      * @return a list of maps representing the rows in the result
      */
     public List<Map<String, Object>> executeQuery(String query) {
-        final var result = cluster.query(query);
+        final var result = cluster.query(query, QUERY_OPTIONS);
         return result.rowsAsObject()
                 .stream()
                 .map(JsonObject::toMap)

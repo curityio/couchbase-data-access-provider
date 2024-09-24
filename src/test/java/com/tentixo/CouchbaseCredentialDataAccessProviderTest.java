@@ -21,22 +21,14 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.UpsertOptions;
-import com.tentixo.configuration.CouchbaseDataAccessProviderConfiguration;
-import com.tentixo.testcontainers.CouchbaseContainerMetadata;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.couchbase.CouchbaseContainer;
-import org.testcontainers.couchbase.CouchbaseService;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import se.curity.identityserver.sdk.attribute.AccountAttributes;
 import se.curity.identityserver.sdk.attribute.Attribute;
 
 import java.time.Duration;
 
-import static com.tentixo.testcontainers.CouchbaseContainerMetadata.*;
+import static com.tentixo.testcontainers.CouchbaseContainerMetadata.BUCKET_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -54,7 +46,6 @@ class CouchbaseCredentialDataAccessProviderTest extends AbstractCouchbaseRunner{
 
     @BeforeAll
     public static void setup() throws InterruptedException {
-        couchbaseContainer.start();
         CouchbaseExecutor ce = new CouchbaseExecutor(getConfiguration(null));
         credentialDataAccessProvider =
             new CouchbaseCredentialDataAccessProvider(ce);

@@ -17,6 +17,7 @@ package com.tentixo.configuration;
 
 import se.curity.identityserver.sdk.config.Configuration;
 import se.curity.identityserver.sdk.config.annotation.*;
+import se.curity.identityserver.sdk.service.Json;
 
 /**
  * Provides configuration for accessing Couchbase data.

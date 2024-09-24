@@ -21,7 +21,11 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.UpsertOptions;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import se.curity.identityserver.sdk.attribute.AccountAttributes;
 import se.curity.identityserver.sdk.attribute.Attribute;
 import se.curity.identityserver.sdk.attribute.scim.v2.ResourceAttributes;
@@ -35,7 +39,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.tentixo.testcontainers.CouchbaseContainerMetadata.BUCKET_NAME;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * You should have a document like below in the database:
@@ -53,12 +59,15 @@ class CouchbaseUserAccountDataAccessProviderTest  extends AbstractCouchbaseRunne
 
     @BeforeAll
     public static void setup() throws InterruptedException {
-        couchbaseContainer.start();
         CouchbaseExecutor ce = new CouchbaseExecutor(getConfiguration(null));
         dataAccessProvider =
             new CouchbaseUserAccountDataAccessProvider(ce);
         Cluster c = Cluster.connect(couchbaseContainer.getConnectionString(), couchbaseContainer.getUsername(), couchbaseContainer.getPassword());
         c.waitUntilReady(Duration.ofSeconds(2));
+
+        // Clear any created accounts
+        var resources = ce.findAllPageable(0, 100).getResources();
+        resources.forEach(resource -> ce.delete(resource.getId()));
 
         Bucket b = c.bucket(BUCKET_NAME);
         Scope scope = b.scope(getConfiguration(null).getScope());

@@ -110,7 +110,7 @@ public final class CouchbaseNonceDataAccessProvider implements NonceDataAccessPr
             }
             collection.mutateIn(nonce, List.of(
                     MutateInSpec.replace("nonceStatus", status.name()),
-                    MutateInSpec.insert("consumedAt", maybeConsumedAt)
+                    MutateInSpec.replace("consumedAt", maybeConsumedAt)
             ));
         } else {
             collection.mutateIn(nonce, List.of(

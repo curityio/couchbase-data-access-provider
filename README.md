@@ -1,4 +1,8 @@
 # Couchbase Data Source plugin
+
+[![Quality](https://img.shields.io/badge/quality-experiment-red)](https://curity.io/resources/code-examples/status/)
+[![Availability](https://img.shields.io/badge/availability-source-blue)](https://curity.io/resources/code-examples/status/)
+
 This is an implementation of a Curity Couchbase datasource plugin
 
 This plugin currently implements the following interfaces:
